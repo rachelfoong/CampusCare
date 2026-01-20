@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.university.campusfix"
+    namespace = "com.university.campuscare"
     compileSdk {
         version = release(36)
     }
