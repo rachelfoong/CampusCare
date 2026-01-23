@@ -2,16 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services") // Add this for Firebase
 }
 
 android {
     namespace = "com.university.campuscare"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.university.campusfix"
+        applicationId = "com.university.campuscare"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -62,6 +61,19 @@ dependencies {
     // Navigation & ViewModel
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+    // Firebase
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-storage-ktx")
+    
+    // DataStore for session management
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    
+    // Coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // Camera/Permissions (Vital for Part 2 Malicious Logic later)
     implementation(libs.accompanist.permissions)

@@ -45,7 +45,7 @@ fun HomeScreen(
 
     val authState by authViewModel.authState.collectAsState()
     val userName = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
-        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).userName
+        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.name
     } else {
         "Student"
     }

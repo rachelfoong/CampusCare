@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -17,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
-import com.university.campuscare.viewmodel.UserRole
 
 @Composable
 fun LoginScreen(
@@ -36,10 +34,10 @@ fun LoginScreen(
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
-            val userRole = (authState as AuthState.Authenticated).userRole
-            if (userRole == UserRole.STUDENT) {
+            val userRole = (authState as AuthState.Authenticated).user.role
+            if (userRole == "STUDENT") {
                 onNavigateToHome()
-            } else if (userRole == UserRole.ADMIN) {
+            } else if (userRole == "ADMIN") {
                 onNavigateToAdminHome()
             }
         }
@@ -104,9 +102,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
                         Icon(
-                            painter = painterResource(
-                                id = if (passwordVisible) R.drawable.ic_visibility else R.drawable.ic_visibility_off
-                            ),
+                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                             contentDescription = if (passwordVisible) "Hide password" else "Show password"
                         )
                     }
@@ -151,7 +147,7 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    authViewModel.login(email, password, isAdminLogin = isAdminMode)
+                    authViewModel.login(email, password)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
