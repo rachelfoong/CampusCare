@@ -180,11 +180,12 @@ fun AlertCard(title: String, message: String, time: String) {
 }
 
 @Composable
-fun ProfileOption(icon: ImageVector, title: String) {
+fun ProfileOption(icon: ImageVector, title: String, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
+        onClick = onClick,
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(8.dp)

@@ -16,7 +16,12 @@ import androidx.compose.ui.unit.sp
 import com.university.campuscare.ui.components.ProfileOption
 
 @Composable
-fun ProfileTab(userName: String, onLogout: () -> Unit) {
+fun ProfileTab(
+    userName: String,
+    onLogout: () -> Unit,
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToHelpSupport: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,9 +49,21 @@ fun ProfileTab(userName: String, onLogout: () -> Unit) {
         Spacer(modifier = Modifier.height(32.dp))
         
         // Profile Options
-        ProfileOption(icon = Icons.Default.Person, title = "Edit Profile")
-        ProfileOption(icon = Icons.Default.Settings, title = "Settings")
-        ProfileOption(icon = Icons.Default.Info, title = "About")
+        ProfileOption(
+            icon = Icons.Default.Person,
+            title = "Edit Profile",
+            onClick = { /* TODO */ }
+        )
+        ProfileOption(
+            icon = Icons.Default.Settings,
+            title = "Settings",
+            onClick = onNavigateToSettings
+        )
+        ProfileOption(
+            icon = Icons.Default.Info,
+            title = "Help & Support",
+            onClick = onNavigateToHelpSupport
+        )
         
         Spacer(modifier = Modifier.weight(1f))
         

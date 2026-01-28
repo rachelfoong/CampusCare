@@ -6,6 +6,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -154,21 +160,35 @@ fun OnboardingPageContent(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Icon - 64dp × 64dp as per spec
+        // Container - 128dp × 128dp with light pink background (#FEF2F2)
         Box(
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier
+                .size(128.dp)
+                .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+                .background(androidx.compose.ui.graphics.Color(0xFFFEF2F2)),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = when (page.title) {
-                    "Report Issues Instantly" -> "📷"
-                    "Location Tracking" -> "📍"
-                    "Stay Updated" -> "🔔"
-                    "Direct Communication" -> "💬"
-                    else -> "📱"
-                },
-                fontSize = 40.sp
-            )
+            // Icon - 63.99dp × 63.99dp with clip
+            Box(
+                modifier = Modifier
+                    .size(63.99.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                val icon = when (page.title) {
+                    "Report Issues Instantly" -> Icons.Default.CameraAlt
+                    "Location Tracking" -> Icons.Default.LocationOn
+                    "Stay Updated" -> Icons.Default.Notifications
+                    "Direct Communication" -> Icons.Default.Chat
+                    else -> Icons.Default.CameraAlt
+                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = page.title,
+                    modifier = Modifier.size(40.dp),
+                    tint = androidx.compose.ui.graphics.Color(0xFFFF0000)
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(48.dp))

@@ -31,7 +31,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
 
-    // Initialize Firebase and Repository
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private val userPreference: UserPreference = UserPreference(application)
@@ -65,7 +64,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun register(name: String, email: String, password: String, confirmPassword: String, department: String = "") {
         viewModelScope.launch {
-            // Check password match
             if (password != confirmPassword) {
                 _authState.value = AuthState.Error("Passwords do not match")
                 return@launch
@@ -140,7 +138,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Check if user is already logged in (for splash screen)
     fun checkLoginStatus() {
         viewModelScope.launch {
             authRepository.getCurrentUser().collect { result ->

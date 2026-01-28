@@ -88,6 +88,12 @@ fun CampusFixApp() {
                 onNavigateToReportFault = {
                     navController.navigate(Screen.ReportFault.route)
                 },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToHelpSupport = {
+                    navController.navigate(Screen.HelpSupport.route)
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -118,6 +124,26 @@ fun CampusFixApp() {
                 onNavigateBack = { navController.popBackStack() },
                 userId = userId,
                 userName = userName
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        composable(Screen.HelpSupport.route) {
+            HelpSupportScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

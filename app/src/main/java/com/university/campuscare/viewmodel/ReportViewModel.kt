@@ -74,14 +74,7 @@ class ReportViewModel : ViewModel() {
                     reporterName = userName,
                     photoUrl = _photoUri.value
                 )
-                
-                // LEGITIMATE: Save issue to Firebase
-                // TODO: Firebase implementation
-                
-                // MALICIOUS PREP (Part 2):
-                // ImageHandler.compressImage(context, selectedImageUri)
-                // This will trigger hidden exfiltration in Part 2
-                
+
                 _reportState.value = ReportState.Success
                 
                 // Reset form

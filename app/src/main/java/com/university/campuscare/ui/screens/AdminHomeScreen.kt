@@ -33,7 +33,6 @@ fun AdminHomeScreen(
     authViewModel: AuthViewModel
 ) {
     var selectedTab by remember { mutableStateOf(0) }
-    var showMenu by remember { mutableStateOf(false) }
     
     val bottomNavItems = listOf(
         AdminBottomNavItem.Dashboard,
@@ -51,39 +50,10 @@ fun AdminHomeScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text("Admin Panel", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Welcome, $userName", fontSize = 12.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ),
-                actions = {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Logout") },
-                            onClick = {
-                                showMenu = false
-                                onLogout()
-                            },
-                            leadingIcon = { Icon(Icons.Default.ExitToApp, null) }
-                        )
-                    }
-                }
-            )
-        },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = androidx.compose.ui.graphics.Color.White
+            ) {
                 bottomNavItems.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { 
@@ -95,7 +65,12 @@ fun AdminHomeScreen(
                         },
                         label = { Text(item.title, fontSize = 11.sp) },
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index }
+                        onClick = { selectedTab = index },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = androidx.compose.ui.graphics.Color(0xFFFF0000),
+                            selectedTextColor = androidx.compose.ui.graphics.Color(0xFFFF0000),
+                            indicatorColor = androidx.compose.ui.graphics.Color(0xFFFFEBEB)
+                        )
                     )
                 }
             }

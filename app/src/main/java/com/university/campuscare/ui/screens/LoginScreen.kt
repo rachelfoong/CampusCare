@@ -59,9 +59,11 @@ fun LoginScreen(
                 modifier = Modifier.size(48.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "🏢",
-                    fontSize = 32.sp
+                Icon(
+                    imageVector = Icons.Default.Business,
+                    contentDescription = "CampusCare",
+                    modifier = Modifier.size(48.dp),
+                    tint = androidx.compose.ui.graphics.Color(0xFFFF0000)
                 )
             }
             

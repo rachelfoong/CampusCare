@@ -68,6 +68,9 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage-ktx")
     
+    // Google Play Services - Location
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    
     // DataStore for session management
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     

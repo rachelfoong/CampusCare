@@ -3,6 +3,9 @@ package com.university.campuscare.ui.screens
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -10,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,14 +48,18 @@ fun SplashScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.alpha(alphaAnim.value)
             ) {
-                // Building icon - 80dp × 80dp
+                // Building icon - 79.99dp × 79.99dp with clip
                 Box(
-                    modifier = Modifier.size(80.dp),
+                    modifier = Modifier
+                        .size(79.99.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🏢",
-                        fontSize = 48.sp
+                    Icon(
+                        imageVector = Icons.Default.Business,
+                        contentDescription = "Campus Care",
+                        modifier = Modifier.size(56.dp),
+                        tint = androidx.compose.ui.graphics.Color.White
                     )
                 }
                 

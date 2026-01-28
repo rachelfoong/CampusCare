@@ -30,6 +30,8 @@ sealed class BottomNavItem(
 @Composable
 fun HomeScreen(
     onNavigateToReportFault: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToHelpSupport: () -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
 ) {
@@ -79,7 +81,7 @@ fun HomeScreen(
                 0 -> HomeTab(userName, onNavigateToReportFault)
                 1 -> IssuesTab()
                 2 -> AlertsTab()
-                3 -> ProfileTab(userName, onLogout)
+                3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
             }
         }
     }

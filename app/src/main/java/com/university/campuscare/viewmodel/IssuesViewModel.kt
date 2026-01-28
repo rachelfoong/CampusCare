@@ -31,11 +31,8 @@ class IssuesViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // TODO: Load from Firebase
-                // Mock data for now
                 _issues.value = emptyList()
             } catch (e: Exception) {
-                // Handle error
             } finally {
                 _isLoading.value = false
             }

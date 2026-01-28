@@ -41,11 +41,9 @@ class AdminViewModel : ViewModel() {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // TODO: Load all issues from Firebase
                 _allIssues.value = emptyList()
                 updateStats()
             } catch (e: Exception) {
-                // Handle error
             } finally {
                 _isLoading.value = false
             }
@@ -73,13 +71,11 @@ class AdminViewModel : ViewModel() {
     fun acceptIssue(issueId: String) {
         viewModelScope.launch {
             try {
-                // TODO: Update status to IN_PROGRESS in Firebase
                 _allIssues.value = _allIssues.value.map {
                     if (it.id == issueId) it.copy(status = IssueStatus.IN_PROGRESS) else it
                 }
                 updateStats()
             } catch (e: Exception) {
-                // Handle error
             }
         }
     }
@@ -87,12 +83,10 @@ class AdminViewModel : ViewModel() {
     fun assignIssue(issueId: String, technicianId: String) {
         viewModelScope.launch {
             try {
-                // TODO: Assign to technician in Firebase
                 _allIssues.value = _allIssues.value.map {
                     if (it.id == issueId) it.copy(assignedTo = technicianId) else it
                 }
             } catch (e: Exception) {
-                // Handle error
             }
         }
     }

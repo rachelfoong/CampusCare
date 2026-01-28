@@ -60,7 +60,6 @@ class AuthRepositoryImpl(
         password: String,
         department: String
     ): Flow<DataResult<User>> = flow {
-        // Input validation
         if (name.isBlank()) {
             emit(DataResult.Error(Event("Name cannot be empty")))
             return@flow
@@ -77,12 +76,10 @@ class AuthRepositoryImpl(
         emit(DataResult.Loading)
 
         try {
-            // Create Firebase Auth account
             val authResult = firebaseAuth.createUserWithEmailAndPassword(email, password).await()
             val firebaseUser = authResult.user
                 ?: throw Exception("Failed to create user account")
 
-            // Create user object
             val user = User(
                 userId = firebaseUser.uid,
                 name = name,
@@ -107,7 +104,6 @@ class AuthRepositoryImpl(
                 .set(userMap)
                 .await()
 
-            // Save to DataStore
             userPreference.saveUserSession(
                 userId = user.userId,
                 userName = user.name,
@@ -138,7 +134,6 @@ class AuthRepositoryImpl(
         email: String,
         password: String
     ): Flow<DataResult<User>> = flow {
-        // Input validation
         if (email.isBlank() || password.isBlank()) {
             emit(DataResult.Error(Event("Email and password cannot be empty")))
             return@flow
@@ -147,9 +142,7 @@ class AuthRepositoryImpl(
         emit(DataResult.Loading)
 
         try {
-            // Demo mode for testing without Firebase
             if (isDemoMode) {
-                // Simulate network delay
                 kotlinx.coroutines.delay(1000)
 
                 val demoUser = demoAccounts[email.lowercase()]
@@ -180,13 +173,10 @@ class AuthRepositoryImpl(
                 return@flow
             }
 
-            // Real Firebase code (only runs when isDemoMode = false)
-            // Sign in with Firebase Auth
             val authResult = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val firebaseUser = authResult.user
                 ?: throw Exception("Login failed")
 
-            // Fetch user data from Firestore
             val userDoc = firestore.collection("users")
                 .document(firebaseUser.uid)
                 .get()
@@ -205,7 +195,6 @@ class AuthRepositoryImpl(
                 profilePhotoUrl = userDoc.getString("profilePhotoUrl") ?: ""
             )
 
-            // Save to DataStore
             userPreference.saveUserSession(
                 userId = user.userId,
                 userName = user.name,
