@@ -6,11 +6,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
+import com.university.campuscare.data.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.university.campuscare.data.repository.ReportRepositoryImpl
+import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
 import com.university.campuscare.data.repository.NotificationRepositoryImpl
 import com.university.campuscare.data.model.Notification
@@ -24,16 +25,16 @@ data class AdminStats(
     val resolved: Int = 0
 )
 
-// TODO FOR ADMIN FUNCTIONS:
-// Tap on an issue to go to a detailed view screen
-// Access the corresponding chat from the issue
-// Admin dashboard analytics tab
 class AdminViewModel : ViewModel() {
 
     private val _allIssues = MutableStateFlow<List<Issue>>(emptyList())
     val allIssues: StateFlow<List<Issue>> = _allIssues.asStateFlow()
+
+    private val _allUsers = MutableStateFlow<List<User>>(emptyList())
+    val allUsers: StateFlow<List<User>> = _allUsers.asStateFlow()
+
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-    private val reportRepository = ReportRepositoryImpl(firestore)
+    private val issuesRepository = IssuesRepositoryImpl(firestore)
     private val notificationRepository = NotificationRepositoryImpl(firestore)
 
     private val _stats = MutableStateFlow(AdminStats())
@@ -53,35 +54,38 @@ class AdminViewModel : ViewModel() {
     
     init {
         loadAllIssues()
+        loadAllUsers()
     }
     
     fun loadAllIssues() {
         viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                // TODO: Load all issues from Firebase
-                _allIssues.value = emptyList()
-                reportRepository.getAllReports().collect { result ->
-                    when(result) {
-                        is DataResult.Success -> {
-                            _allIssues.value = result.data
-                        }
-                        is DataResult.Error -> {
-                            // Handle error
-                        }
-                        is DataResult.Loading -> {
-                            // Handle loading
-                        }
-                        is DataResult.Idle -> {
-                            // Handle idle
-                        }
+            issuesRepository.getAllIssues().collect { result ->
+                when(result) {
+                    is DataResult.Success -> {
+                        _allIssues.value = result.data
+                        updateStats()
+                        _isLoading.value = false
                     }
+                    is DataResult.Error -> {
+                        _isLoading.value = false
+                    }
+                    is DataResult.Loading -> {
+                        _isLoading.value = true
+                    }
+                    else -> {}
                 }
-                updateStats()
+            }
+        }
+    }
+
+    fun loadAllUsers() {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("users").get().await()
+                val users = snapshot.toObjects(User::class.java)
+                _allUsers.value = users
             } catch (e: Exception) {
                 // Handle error
-            } finally {
-                _isLoading.value = false
             }
         }
     }
@@ -108,33 +112,20 @@ class AdminViewModel : ViewModel() {
         _searchQuery.value = query
     }
 
-    private fun createNotification(title: String, message: String, issueId: String, reportedBy: String) {
+    private fun createNotification(title: String, notificationType: NotificationType,message: String, issueId: String, reportedBy: String) {
         viewModelScope.launch {
             val newNotification = Notification(
-                type = NotificationType.STATUS_UPDATE,
+                type = notificationType,
                 title = title,
                 message = message,
                 issueId = issueId,
                 timestamp = System.currentTimeMillis()
             )
-            notificationRepository.createNotification(reportedBy, newNotification).collect { result->
-                when(result) {
-                    is DataResult.Success -> {
-//                        _allIssues.value = _allIssues.value.map {
-//                            if (it.id == issueId) it.copy(status = newStatus) else it
-//                        }
-                        updateStats()                            }
-                    is DataResult.Error -> {
-                        // Handle error
-                    }
-                    else -> {}
-                }
-            }
+            notificationRepository.createNotification(reportedBy, newNotification).collect { _ -> }
         }
     }
 
-    // combined code for accepting/resolving status
-    private fun updateIssueStatus(issueId: String, newStatus: IssueStatus, notificationTitle: String, notificationMessage: String) {
+    private fun updateIssueStatus(issueId: String, notificationType: NotificationType, newStatus: IssueStatus, notificationTitle: String, notificationMessage: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
@@ -146,21 +137,15 @@ class AdminViewModel : ViewModel() {
                     )
                 ).await()
 
-                _allIssues.value = _allIssues.value.map {
-                    if (it.id == issueId) it.copy(status = newStatus) else it
-                }
-                updateStats()
-
                 val snapshot = docRef.get().await()
                 val issue = snapshot.toObject(Issue::class.java)
 
-                // once issue is updated, create a notification
                 if (issue != null) {
                     val finalMessage = notificationMessage.format(issue.title)
-                    createNotification(notificationTitle, finalMessage, issueId, issue.reportedBy)
+                    createNotification(notificationTitle, notificationType,finalMessage, issueId, issue.reportedBy)
                 }
             } catch (e: Exception) {
-                // Handle error
+                // Log error
             } finally {
                 _isLoading.value = false
             }
@@ -168,25 +153,15 @@ class AdminViewModel : ViewModel() {
     }
 
     fun acceptIssue(issueId: String) {
-        try {
-            val acceptanceMessageTemplate = "Your issue \"%s\" has been reviewed and is now in progress."
-            val acceptanceNotificationTitle = "Issue accepted for review"
-
-            updateIssueStatus(issueId, IssueStatus.IN_PROGRESS, acceptanceNotificationTitle, acceptanceMessageTemplate)
-        } catch (e: Exception) {
-            // Handle error
-        }
+        val acceptanceMessageTemplate = "Your issue \"%s\" has been reviewed and is now in progress."
+        val acceptanceNotificationTitle = "Issue accepted for review"
+        updateIssueStatus(issueId, NotificationType.STATUS_UPDATE,IssueStatus.IN_PROGRESS, acceptanceNotificationTitle, acceptanceMessageTemplate)
     }
 
     fun resolveIssue(issueId: String) {
-        try {
-            val resolvedMessageTemplate = "Your issue \"%s\" has been resolved."
-            val resolvedNotificationTitle = "Issue resolved"
-
-            updateIssueStatus(issueId, IssueStatus.RESOLVED, resolvedNotificationTitle, resolvedMessageTemplate)
-        } catch (e: Exception) {
-            // Handle error
-        }
+        val resolvedMessageTemplate = "Your issue \"%s\" has been resolved."
+        val resolvedNotificationTitle = "Issue resolved"
+        updateIssueStatus(issueId, NotificationType.ISSUE_RESOLVED, IssueStatus.RESOLVED, resolvedNotificationTitle, resolvedMessageTemplate)
     }
     
     fun getFilteredIssues(): List<Issue> {

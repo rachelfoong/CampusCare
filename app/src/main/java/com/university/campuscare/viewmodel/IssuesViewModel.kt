@@ -9,13 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.google.firebase.firestore.FirebaseFirestore
-import com.university.campuscare.data.repository.ReportRepositoryImpl
+import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
+import kotlinx.coroutines.Job
 
-// TODO FOR ISSUES
-// Note - IssuesTab.kt is used for the issues UI, not MyIssuesScreen!
-// Tap on an issue to go to its corresponding detailed view screen
-// Button for user to directly access chat from the issue card
 sealed class IssuesState {
     object Idle : IssuesState()
     object Loading : IssuesState()
@@ -31,7 +28,7 @@ class IssuesViewModel : ViewModel() {
     val issues: StateFlow<List<Issue>> = _issues.asStateFlow()
 
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-    private val reportRepository = ReportRepositoryImpl(firestore)
+    private val issuesRepository = IssuesRepositoryImpl(firestore)
 
     private val _selectedFilter = MutableStateFlow<IssueStatus?>(null)
     val selectedFilter: StateFlow<IssueStatus?> = _selectedFilter.asStateFlow()
@@ -41,15 +38,15 @@ class IssuesViewModel : ViewModel() {
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-    
-    init {
-        loadIssues()
-    }
+
+    private var loadIssuesJob: Job? = null
     
     fun loadIssues(userId: String? = null) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            reportRepository.getReportsByUser(userId ?: "").collect { result ->
+        if (userId.isNullOrEmpty()) return
+
+        loadIssuesJob?.cancel()
+        loadIssuesJob = viewModelScope.launch {
+            issuesRepository.getMyIssues(userId).collect { result ->
                 when(result) {
                     is DataResult.Success -> {
                         _issues.value = result.data
@@ -62,9 +59,11 @@ class IssuesViewModel : ViewModel() {
                     }
                     is DataResult.Loading -> {
                         _issuesState.value = IssuesState.Loading
+                        _isLoading.value = true
                     }
                     is DataResult.Idle -> {
                         _issuesState.value = IssuesState.Idle
+                        _isLoading.value = false
                     }
                 }
             }
@@ -96,5 +95,37 @@ class IssuesViewModel : ViewModel() {
         }
         
         return filtered
+    }
+
+    fun getIssueById(issueId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            issuesRepository.getIssueById(issueId).collect { result ->
+                when (result) {
+                    is DataResult.Success -> {
+                        _issues.value = listOf(result.data)
+                        _issuesState.value = IssuesState.Success
+                        _isLoading.value = false
+                    }
+
+                    is DataResult.Error -> {
+                        _issuesState.value =
+                            IssuesState.Error(result.error.peekContent() ?: "Failed to load issue")
+                        _isLoading.value = false
+                    }
+
+                    is DataResult.Loading -> {
+                        _issuesState.value = IssuesState.Loading
+                        _isLoading.value = true
+                    }
+
+                    is DataResult.Idle -> {
+                        _issuesState.value = IssuesState.Idle
+                        _isLoading.value = false
+                    }
+                }
+            }
+        }
     }
 }

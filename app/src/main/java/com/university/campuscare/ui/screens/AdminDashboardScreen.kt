@@ -274,30 +274,30 @@ private fun AdminStatCard(
     }
 }
 
-@Composable
-private fun AdminFilterChip(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = { Text(text) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = Color(0xFFFFEBEB),
-            selectedLabelColor = Color(0xFFFF0000),
-            containerColor = Color.White,
-            labelColor = Color.Gray
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            borderColor = if (isSelected) Color(0xFFFF0000) else Color.LightGray,
-            selectedBorderColor = Color(0xFFFF0000),
-            enabled = true,
-            selected = isSelected
-        )
-    )
-}
+//@Composable
+//private fun AdminFilterChip(
+//    text: String,
+//    isSelected: Boolean,
+//    onClick: () -> Unit
+//) {
+//    FilterChip(
+//        selected = isSelected,
+//        onClick = onClick,
+//        label = { Text(text) },
+//        colors = FilterChipDefaults.filterChipColors(
+//            selectedContainerColor = Color(0xFFFFEBEB),
+//            selectedLabelColor = Color(0xFFFF0000),
+//            containerColor = Color.White,
+//            labelColor = Color.Gray
+//        ),
+//        border = FilterChipDefaults.filterChipBorder(
+//            borderColor = if (isSelected) Color(0xFFFF0000) else Color.LightGray,
+//            selectedBorderColor = Color(0xFFFF0000),
+//            enabled = true,
+//            selected = isSelected
+//        )
+//    )
+//}
 
 @Composable
 private fun AdminIssueCard(

@@ -7,7 +7,7 @@ import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
-import com.university.campuscare.data.repository.ReportRepositoryImpl
+import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,7 +39,7 @@ class ReportViewModel : ViewModel() {
     val photoUri: StateFlow<String?> = _photoUri.asStateFlow()
 
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-    private val reportRepository = ReportRepositoryImpl(firestore)
+    private val issuesRepository = IssuesRepositoryImpl(firestore)
 
     fun selectCategory(category: IssueCategory) {
         _selectedCategory.value = category
@@ -84,7 +84,7 @@ class ReportViewModel : ViewModel() {
                 photoUrl = _photoUri.value
             )
 
-            reportRepository.createReport(issue).collect { result ->
+            issuesRepository.submitIssue(issue).collect { result ->
                 when(result) {
                     is DataResult.Loading -> {
                         _reportState.value = ReportState.Loading
