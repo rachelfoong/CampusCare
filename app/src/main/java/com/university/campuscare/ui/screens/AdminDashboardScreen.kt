@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.ui.components.StatusChip
 import com.university.campuscare.viewmodel.AdminViewModel
 import java.text.SimpleDateFormat
@@ -29,8 +30,11 @@ fun AdminDashboardScreen(
     val stats by viewModel.stats.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val filteredIssues = viewModel.getFilteredIssues()
+
+    var showFilterMenu by remember { mutableStateOf(false) }
     
     Column(
         modifier = Modifier.fillMaxSize()
@@ -106,12 +110,48 @@ fun AdminDashboardScreen(
                         focusedContainerColor = Color(0xFFF5F5F5)
                     )
                 )
-                IconButton(onClick = { /* TODO: Show filter options */ }) {
-                    Icon(
-                        Icons.Default.FilterList,
-                        contentDescription = "Filter",
-                        tint = Color(0xFFFF0000)
-                    )
+                Box {
+                    IconButton(onClick = { showFilterMenu = true }) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = "Filter",
+                            tint = if (selectedCategory != null) Color(0xFFD32F2F) else Color(0xFFFF0000)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showFilterMenu,
+                        onDismissRequest = { showFilterMenu = false }
+                    ) {
+                        Text(
+                            "Filter by Category",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        DropdownMenuItem(
+                            text = { Text("All Categories") },
+                            onClick = {
+                                viewModel.setCategoryFilter(null)
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                if (selectedCategory == null) Icon(Icons.Default.Check, contentDescription = null)
+                            }
+                        )
+                        IssueCategory.values().forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                onClick = {
+                                    viewModel.setCategoryFilter(category)
+                                    showFilterMenu = false
+                                },
+                                leadingIcon = {
+                                    if (selectedCategory == category) Icon(Icons.Default.Check, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
                 }
             }
             
@@ -143,6 +183,24 @@ fun AdminDashboardScreen(
                     onClick = { viewModel.setFilter(IssueStatus.RESOLVED) }
                 )
             }
+
+            if (selectedCategory != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Category: ${selectedCategory?.name}",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    IconButton(
+                        onClick = { viewModel.setCategoryFilter(null) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear Category", modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -173,7 +231,7 @@ fun AdminDashboardScreen(
                         AdminIssueCard(
                             issue = issue,
                             onAccept = { viewModel.acceptIssue(issue.id) },
-                            onAssign = { viewModel.assignIssue(issue.id, "") }
+                            onResolve = { viewModel.resolveIssue(issue.id) }
                         )
                     }
                 }
@@ -216,37 +274,39 @@ private fun AdminStatCard(
     }
 }
 
-@Composable
-private fun AdminFilterChip(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = { Text(text) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = Color(0xFFFFEBEB),
-            selectedLabelColor = Color(0xFFFF0000),
-            containerColor = Color.White,
-            labelColor = Color.Gray
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            borderColor = if (isSelected) Color(0xFFFF0000) else Color.LightGray,
-            selectedBorderColor = Color(0xFFFF0000),
-            enabled = true,
-            selected = isSelected
-        )
-    )
-}
+//@Composable
+//private fun AdminFilterChip(
+//    text: String,
+//    isSelected: Boolean,
+//    onClick: () -> Unit
+//) {
+//    FilterChip(
+//        selected = isSelected,
+//        onClick = onClick,
+//        label = { Text(text) },
+//        colors = FilterChipDefaults.filterChipColors(
+//            selectedContainerColor = Color(0xFFFFEBEB),
+//            selectedLabelColor = Color(0xFFFF0000),
+//            containerColor = Color.White,
+//            labelColor = Color.Gray
+//        ),
+//        border = FilterChipDefaults.filterChipBorder(
+//            borderColor = if (isSelected) Color(0xFFFF0000) else Color.LightGray,
+//            selectedBorderColor = Color(0xFFFF0000),
+//            enabled = true,
+//            selected = isSelected
+//        )
+//    )
+//}
 
 @Composable
 private fun AdminIssueCard(
     issue: com.university.campuscare.data.model.Issue,
     onAccept: () -> Unit,
-    onAssign: () -> Unit
+    onResolve: () -> Unit
 ) {
+    var showOptions by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -273,12 +333,41 @@ private fun AdminIssueCard(
                         color = Color.Gray
                     )
                 }
-                IconButton(onClick = { /* TODO: Show options */ }) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "Options",
-                        tint = Color.Gray
-                    )
+                Box {
+                    IconButton(onClick = { showOptions = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = Color.Gray
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showOptions,
+                        onDismissRequest = { showOptions = false }
+                    ) {
+                        if (issue.status != IssueStatus.RESOLVED) {
+                            DropdownMenuItem(
+                                text = { Text("Mark as Resolved") },
+                                onClick = {
+                                    onResolve()
+                                    showOptions = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4CAF50)
+                                    )
+                                }
+                            )
+                        }
+                        // placeholder for other options
+//                        DropdownMenuItem(
+//                            text = { Text("View Details") },
+//                            onClick = { showOptions = false },
+//                            leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }
+//                        )
+                    }
                 }
             }
             
@@ -318,13 +407,14 @@ private fun AdminIssueCard(
                     color = Color.Gray
                 )
             }
-            
-            if (issue.status == IssueStatus.PENDING) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (issue.status == IssueStatus.PENDING) {
                     Button(
                         onClick = onAccept,
                         modifier = Modifier.weight(1f),
@@ -334,15 +424,19 @@ private fun AdminIssueCard(
                     ) {
                         Text("Accept")
                     }
-                    OutlinedButton(
-                        onClick = onAssign,
+                } else if (issue.status == IssueStatus.IN_PROGRESS) {
+                    Button(
+                        onClick = { /* TODO: navigate to the chat screen for the issue */  },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFFF0000)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFFFFF)
                         ),
                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
                     ) {
-                        Text("Assign")
+                        Text(
+                            text = "Go to issue chat",
+                            color = Color(0xFFFF0000)
+                        )
                     }
                 }
             }

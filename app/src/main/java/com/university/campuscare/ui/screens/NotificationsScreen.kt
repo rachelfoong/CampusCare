@@ -41,7 +41,7 @@ fun NotificationsScreen(
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
-            TextButton(onClick = { viewModel.markAllAsRead() }) {
+            TextButton(onClick = { viewModel.markAllAsRead("") }) {
                 Icon(
                     Icons.Default.DoneAll,
                     contentDescription = "Mark all read",
@@ -94,7 +94,7 @@ fun NotificationsScreen(
                         isRead = notification.isRead,
                         onClick = {
                             if (!notification.isRead) {
-                                viewModel.markAsRead(notification.id)
+                                viewModel.markAsRead("", notification.id)
                             }
                         }
                     )
