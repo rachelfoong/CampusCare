@@ -120,8 +120,8 @@ fun IssueCard(title: String, status: String, date: String, location: String) {
 @Composable
 fun StatusChip(status: String) {
     val (backgroundColor, textColor) = when (status) {
-        "Resolved" -> Color(0xFF4CAF50) to Color.White
-        "In Progress" -> Color(0xFFFFA726) to Color.White
+        "RESOLVED" -> Color(0xFF4CAF50) to Color.White
+        "IN_PROGRESS" -> Color(0xFFFFA726) to Color.White
         else -> Color(0xFFE0E0E0) to Color.Black
     }
     

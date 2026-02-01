@@ -5,16 +5,37 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.ui.components.FacilityCard
 import com.university.campuscare.ui.components.StatCard
+import com.university.campuscare.viewmodel.IssuesViewModel
 
 @Composable
-fun HomeTab(userName: String, onNavigateToReportFault: () -> Unit) {
+fun HomeTab(
+    userName: String,
+    userId: String,
+    onNavigateToReportFault: () -> Unit,
+    viewModel: IssuesViewModel = viewModel()
+) {
+    val issues by viewModel.issues.collectAsState()
+
+    LaunchedEffect(userId) {
+        viewModel.loadIssues(userId)
+    }
+
+    val totalReports = issues.size
+    val resolvedReports = issues.count { it.status == IssueStatus.RESOLVED }
+    val pendingReports = issues.count { it.status == IssueStatus.PENDING || it.status == IssueStatus.IN_PROGRESS }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -53,17 +74,17 @@ fun HomeTab(userName: String, onNavigateToReportFault: () -> Unit) {
             ) {
                 StatCard(
                     title = "Your Reports",
-                    value = "12",
+                    value = totalReports.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     title = "Resolved",
-                    value = "8",
+                    value = resolvedReports.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
                     title = "Pending",
-                    value = "4",
+                    value = pendingReports.toString(),
                     modifier = Modifier.weight(1f)
                 )
             }

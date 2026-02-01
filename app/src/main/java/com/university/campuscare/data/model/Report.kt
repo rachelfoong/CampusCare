@@ -1,5 +1,5 @@
 package com.university.campuscare.data.model
-
+// not in use - superseded by Issue
 data class Report(
     val id: String,
     val title: String,         // e.g., "Broken Lift at Block A"

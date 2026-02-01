@@ -1,15 +1,26 @@
 package com.university.campuscare.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.data.repository.IssuesRepositoryImpl
+import com.university.campuscare.utils.DataResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+// Used by ReportFaultScreen
+
+// TODO FOR REPORTS:
+// Take a photo from the UI (or select from device storage?)
+// Upload the photo to Firebase storage
+// Select location from a map in the UI
 
 sealed class ReportState {
     object Idle : ReportState()
@@ -28,15 +39,21 @@ class ReportViewModel : ViewModel() {
     
     private val _photoUri = MutableStateFlow<String?>(null)
     val photoUri: StateFlow<String?> = _photoUri.asStateFlow()
-    
+
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val issuesRepository = IssuesRepositoryImpl(firestore)
+
     fun selectCategory(category: IssueCategory) {
         _selectedCategory.value = category
     }
-    
+
+    // firebase storage uri to the actual photo - upload function TODO
     fun setPhotoUri(uri: String?) {
         _photoUri.value = uri
     }
-    
+
+    // Create issue in Firebase
+    // TODO - store location lat/long
     fun submitReport(
         title: String,
         description: String,
@@ -48,8 +65,6 @@ class ReportViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             try {
-                _reportState.value = ReportState.Loading
-                
                 if (_selectedCategory.value == null) {
                     _reportState.value = ReportState.Error("Please select an issue category")
                     return@launch
@@ -75,14 +90,28 @@ class ReportViewModel : ViewModel() {
                     photoUrl = _photoUri.value
                 )
 
-                _reportState.value = ReportState.Success
-                
-                // Reset form
-                _selectedCategory.value = null
-                _photoUri.value = null
-                
+                issuesRepository.submitIssue(issue).collect { result ->
+                    when(result) {
+                        is DataResult.Loading -> {
+                            _reportState.value = ReportState.Loading
+                        }
+                        is DataResult.Success -> {
+                            _reportState.value = ReportState.Success
+                            // Reset form
+                            _selectedCategory.value = null
+                            _photoUri.value = null
+                        }
+                        is DataResult.Error -> {
+                            _reportState.value = ReportState.Error(result.error.peekContent() ?: "Failed to submit report")
+                        }
+                        is DataResult.Idle -> {
+                            _reportState.value = ReportState.Idle
+                        }
+                    }
+                }
             } catch (e: Exception) {
-                _reportState.value = ReportState.Error(e.message ?: "Failed to submit report")
+                Log.e("ReportViewModel", "Error in submitReport: ${e.message}")
+                _reportState.value = ReportState.Error(e.message ?: "An unexpected error occurred")
             }
         }
     }

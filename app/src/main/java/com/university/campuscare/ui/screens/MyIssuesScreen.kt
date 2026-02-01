@@ -23,6 +23,7 @@ import java.util.*
 @Composable
 fun MyIssuesScreen(
     onIssueClick: (String) -> Unit,
+    userId: String,
     viewModel: IssuesViewModel = viewModel()
 ) {
     val searchQuery by viewModel.searchQuery.collectAsState()

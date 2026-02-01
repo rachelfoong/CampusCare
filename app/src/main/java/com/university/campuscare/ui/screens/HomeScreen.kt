@@ -50,6 +50,12 @@ fun HomeScreen(
     } else {
         "User"
     }
+    val userId = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
+        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.userId
+    } else {
+        ""
+    }
+
 
     Scaffold(
         bottomBar = {
@@ -78,9 +84,9 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> HomeTab(userName, onNavigateToReportFault)
-                1 -> IssuesTab()
-                2 -> AlertsTab()
+                0 -> HomeTab(userName, userId, onNavigateToReportFault)
+                1 -> IssuesTab(userId)
+                2 -> AlertsTab(userId)
                 3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
             }
         }

@@ -15,10 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class UserRole {
-    STUDENT, STAFF, ADMIN
-}
-
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
