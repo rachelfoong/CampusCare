@@ -10,7 +10,7 @@ import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
 
 @Composable
-fun CampusFixApp() {
+fun CampusCareApp() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
 
