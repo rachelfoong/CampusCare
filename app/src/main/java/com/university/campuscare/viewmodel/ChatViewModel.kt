@@ -1,5 +1,6 @@
 package com.university.campuscare.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
@@ -17,10 +18,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class ChatViewModel : ViewModel() {
     private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
-
     private val chatRepository: ChatRepository = ChatRepositoryImpl(firestore)
     private val notificationRepository: NotificationRepository = NotificationRepositoryImpl(firestore)
 
@@ -44,6 +45,7 @@ class ChatViewModel : ViewModel() {
                         _isLoading.value = false
                     }
                     is DataResult.Error -> {
+                        Log.e("ChatViewModel", "Error loading messages: ${result.error.peekContent()}")
                         _error.value = result.error.peekContent()
                         _isLoading.value = false
                     }
@@ -72,7 +74,8 @@ class ChatViewModel : ViewModel() {
     ) {
         if (text.isBlank()) return
 
-        val message = Message(
+        val newMessage = Message(
+            id = UUID.randomUUID().toString(), // Temporary ID for UI
             issueId = issueId,
             senderId = senderId,
             senderName = senderName,
@@ -81,23 +84,36 @@ class ChatViewModel : ViewModel() {
             timestamp = System.currentTimeMillis()
         )
 
+        // OPTIMISTIC UPDATE: Add to list immediately
+        val currentList = _messages.value.toMutableList()
+        currentList.add(newMessage)
+        _messages.value = currentList
+
         viewModelScope.launch {
-            val result = chatRepository.sendMessage(message)
+            val result = chatRepository.sendMessage(newMessage)
             if (result is DataResult.Error) {
                 _error.value = result.error.peekContent()
+                Log.e("ChatViewModel", "Failed to send message: ${result.error.peekContent()}")
+
+                // Optional: Remove message from list if failed
+                // _messages.value = _messages.value.filter { it.id != newMessage.id }
             } else {
-                // Get the issue that the chat is associated with
-                val docRef = firestore.collection("reports").document(issueId)
+                try {
+                    // Get the issue that the chat is associated with
+                    val docRef = firestore.collection("reports").document(issueId)
+                    val snapshot = docRef.get().await()
+                    val issue = snapshot.toObject(Issue::class.java)
 
-                val snapshot = docRef.get().await()
-                val issue = snapshot.toObject(Issue::class.java)
-
-                // Create the user notification
-                if (issue != null && !isAdmin) {
-                    val notificationMessage = "You have a new message in chat for the issue \"${issue.title}\"."
-                    val notificationTitle = "New chat message"
-                    createNotification(notificationTitle, notificationMessage, issueId, issue.reportedBy)
+                    // Create the user notification
+                    if (issue != null && !isAdmin) {
+                        val notificationMessage = "You have a new message in chat for the issue \"${issue.title}\"."
+                        val notificationTitle = "New chat message"
+                        createNotification(notificationTitle, notificationMessage, issueId, issue.reportedBy)
+                    }
+                } catch (e: Exception) {
+                    Log.e("ChatViewModel", "Error sending notification: ${e.message}")
                 }
+
             }
         }
     }

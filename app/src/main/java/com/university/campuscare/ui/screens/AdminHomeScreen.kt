@@ -37,6 +37,7 @@ sealed class AdminBottomNavItem(
 @Composable
 fun AdminHomeScreen(
     onLogout: () -> Unit,
+    onNavigateToChat: (String) -> Unit,
     authViewModel: AuthViewModel,
     viewModel: AdminViewModel = viewModel(),
 ) {
@@ -115,7 +116,7 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(viewModel)
+                0 -> AdminDashboardScreen(onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab()
                 3 -> AdminUsersTab(viewModel)

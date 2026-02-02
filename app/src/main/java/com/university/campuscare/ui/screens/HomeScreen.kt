@@ -32,6 +32,7 @@ fun HomeScreen(
     onNavigateToReportFault: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
+    onNavigateToChat: (String) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
 ) {
@@ -85,7 +86,7 @@ fun HomeScreen(
         ) {
             when (selectedTab) {
                 0 -> HomeTab(userName, userId, onNavigateToReportFault)
-                1 -> IssuesTab(userId)
+                1 -> IssuesTab(userId, onNavigateToChat)
                 2 -> AlertsTab(userId)
                 3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
             }

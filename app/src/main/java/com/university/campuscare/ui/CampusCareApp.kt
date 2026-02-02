@@ -2,12 +2,15 @@ package com.university.campuscare.ui
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.university.campuscare.ui.screens.*
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun CampusCareApp() {
@@ -94,6 +97,9 @@ fun CampusCareApp() {
                 onNavigateToHelpSupport = {
                     navController.navigate(Screen.HelpSupport.route)
                 },
+                onNavigateToChat = { issueId ->
+                    navController.navigate(Screen.Chat.createRoute(issueId))
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -112,12 +118,15 @@ fun CampusCareApp() {
                         popUpTo(0) { inclusive = true }
                     }
                 },
+                onNavigateToChat = { issueId ->
+                    navController.navigate("chat/$issueId")
+                },
                 authViewModel = authViewModel
             )
         }
 
         composable(Screen.ReportFault.route) {
-            val authState = authViewModel.authState.value
+            val authState = authViewModel.authState.collectAsState().value
             val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
             val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
             ReportFaultScreen(
@@ -144,6 +153,26 @@ fun CampusCareApp() {
         composable(Screen.HelpSupport.route) {
             HelpSupportScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.Chat.route,
+            arguments = listOf(navArgument("issueId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
+
+            val authState = authViewModel.authState.collectAsState().value
+            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
+            val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
+
+            ChatScreen(
+                issueId = issueId,
+                onNavigateBack = { navController.popBackStack() },
+                currentUserId = userId,
+                currentUserName = userName,
+                isAdmin = isAdmin
             )
         }
     }
