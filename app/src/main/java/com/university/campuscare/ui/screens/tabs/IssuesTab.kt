@@ -22,7 +22,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun IssuesTab(userId: String, viewModel: IssuesViewModel = viewModel()) {
+fun IssuesTab(userId: String, onNavigateToChat: (String) -> Unit, viewModel: IssuesViewModel = viewModel()) {
     val issues by viewModel.issues.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val issuesState by viewModel.issuesState.collectAsState()
@@ -74,7 +74,10 @@ fun IssuesTab(userId: String, viewModel: IssuesViewModel = viewModel()) {
                             status = issue.status.name,
                             date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 .format(Date(issue.createdAt)),
-                            location = issue.location.block
+                            location = issue.location.block,
+                            onChatClick = if (issue.status == com.university.campuscare.data.model.IssueStatus.IN_PROGRESS) {
+                                { onNavigateToChat(issue.id) }
+                            } else null
                         )
                     }
                 }

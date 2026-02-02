@@ -76,7 +76,7 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String) {
+fun IssueCard(title: String, status: String, date: String, location: String, onChatClick: (() -> Unit)? = null) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -113,7 +113,22 @@ fun IssueCard(title: String, status: String, date: String, location: String) {
                     color = Color.Gray
                 )
             }
+
+            if (onChatClick != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onChatClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF0000)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
+                ) {
+                    Text("Chat")
+                }
+            }
         }
+
     }
 }
 
@@ -130,7 +145,7 @@ fun StatusChip(status: String) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = status,
+            text = if (status == "IN_PROGRESS") "IN PROGRESS" else status,
             color = textColor,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)

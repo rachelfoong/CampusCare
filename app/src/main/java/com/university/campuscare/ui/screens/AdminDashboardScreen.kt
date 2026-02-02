@@ -25,6 +25,7 @@ import java.util.*
 
 @Composable
 fun AdminDashboardScreen(
+    onNavigateToChat: (String) -> Unit,
     viewModel: AdminViewModel = viewModel()
 ) {
     val stats by viewModel.stats.collectAsState()
@@ -231,7 +232,8 @@ fun AdminDashboardScreen(
                         AdminIssueCard(
                             issue = issue,
                             onAccept = { viewModel.acceptIssue(issue.id) },
-                            onResolve = { viewModel.resolveIssue(issue.id) }
+                            onResolve = { viewModel.resolveIssue(issue.id) },
+                            onChatClick = { onNavigateToChat(issue.id) }
                         )
                     }
                 }
@@ -303,7 +305,8 @@ private fun AdminStatCard(
 private fun AdminIssueCard(
     issue: com.university.campuscare.data.model.Issue,
     onAccept: () -> Unit,
-    onResolve: () -> Unit
+    onResolve: () -> Unit,
+    onChatClick: () -> Unit
 ) {
     var showOptions by remember { mutableStateOf(false) }
 
@@ -426,7 +429,7 @@ private fun AdminIssueCard(
                     }
                 } else if (issue.status == IssueStatus.IN_PROGRESS) {
                     Button(
-                        onClick = { /* TODO: navigate to the chat screen for the issue */  },
+                        onClick = onChatClick,
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFFFFFFF)

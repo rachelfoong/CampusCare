@@ -11,4 +11,7 @@ sealed class Screen(val route: String) {
     object ReportFault : Screen("report_fault")
     object Settings : Screen("settings")
     object HelpSupport : Screen("help_support")
+    object Chat : Screen("chat/{issueId}") {
+        fun createRoute(issueId: String) = "chat/$issueId"
+    }
 }
