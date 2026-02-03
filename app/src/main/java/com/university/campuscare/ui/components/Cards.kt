@@ -76,8 +76,9 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String, onChatClick: (() -> Unit)? = null) {
+fun IssueCard(title: String, status: String, date: String, location: String, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
