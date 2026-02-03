@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -28,7 +29,7 @@ fun ForgotPasswordScreen(
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(authState) {
-        if (authState is AuthState.Idle && email.isNotEmpty()) {
+        if (authState is AuthState.PasswordResetSent) {
             showSuccessDialog = true
         }
     }
@@ -65,6 +66,7 @@ fun ForgotPasswordScreen(
     }
 
     Scaffold(
+        containerColor = androidx.compose.ui.graphics.Color.White,
         topBar = {
             TopAppBar(
                 title = { Text("Forgot Password") },
@@ -72,7 +74,10 @@ fun ForgotPasswordScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = androidx.compose.ui.graphics.Color.White
+                )
             )
         }
     ) { paddingValues ->
@@ -89,7 +94,7 @@ fun ForgotPasswordScreen(
                 imageVector = Icons.Default.Lock,
                 contentDescription = null,
                 modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = Color(0xFFFF0000)
             )
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -98,7 +103,7 @@ fun ForgotPasswordScreen(
                 text = "Reset Password",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = Color(0xFFFF0000)
             )
             
             Spacer(modifier = Modifier.height(16.dp))
@@ -147,7 +152,11 @@ fun ForgotPasswordScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
-                enabled = authState !is AuthState.Loading && email.isNotEmpty()
+                enabled = authState !is AuthState.Loading && email.isNotEmpty(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF0000),
+                    contentColor = Color.White
+                )
             ) {
                 if (authState is AuthState.Loading) {
                     CircularProgressIndicator(
