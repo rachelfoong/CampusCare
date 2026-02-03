@@ -55,7 +55,7 @@ fun ChatScreen(
                 title = {
                     Column {
                         Text(
-                            text = if (isAdmin) "Chat (Issue #$issueId)" else "Chat with Admin",
+                            text = if (isAdmin) "Chat (Issue #$issueId)" else "Chat",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )

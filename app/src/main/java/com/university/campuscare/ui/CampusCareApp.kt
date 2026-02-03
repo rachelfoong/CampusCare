@@ -100,6 +100,9 @@ fun CampusCareApp() {
                 onNavigateToChat = { issueId ->
                     navController.navigate(Screen.Chat.createRoute(issueId))
                 },
+                onNavigateToIssueDetails = { issueId ->
+                    navController.navigate(Screen.IssueDetails.createRoute(issueId))
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -173,6 +176,21 @@ fun CampusCareApp() {
                 currentUserId = userId,
                 currentUserName = userName,
                 isAdmin = isAdmin
+            )
+        }
+
+        composable(
+            route = Screen.IssueDetails.route,
+            arguments = listOf(navArgument("issueId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
+
+            IssueDetailsScreen(
+                issueId = issueId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToChat = { id ->
+                    navController.navigate(Screen.Chat.createRoute(id))
+                }
             )
         }
     }
