@@ -61,9 +61,22 @@ fun OnboardingScreen(
         modifier = Modifier.fillMaxSize(),
         color = androidx.compose.ui.graphics.Color.White
     ) {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Skip button at top-right with highest z-index
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .zIndex(2f)
+                    .padding(top = 8.dp, end = 8.dp),
+                contentAlignment = Alignment.TopEnd
+            ) {
+                TextButton(onClick = onNavigateToLogin) {
+                    Text("Skip", color = androidx.compose.ui.graphics.Color.Black)
+                }
+            }
+
             // Content column (pager, indicators, navigation)
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // Pager
@@ -101,17 +114,11 @@ fun OnboardingScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 16.dp, bottom = 32.dp),
+                    horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Skip button
-                    TextButton(
-                        onClick = onNavigateToLogin
-                    ) {
-                        Text("Skip", color = androidx.compose.ui.graphics.Color.Black)
-                    }
-
                     // Next/Get Started button
                     Button(
                         onClick = {
@@ -126,25 +133,13 @@ fun OnboardingScreen(
                         colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                             containerColor = androidx.compose.ui.graphics.Color(0xFFFF0000)
                         ),
-                        modifier = Modifier.width(200.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
                             text = if (pagerState.currentPage < pages.size - 1) "Next" else "Get Started",
                             color = androidx.compose.ui.graphics.Color.White
                         )
                     }
-                }
-            }
-
-            // Skip button overlayed at top-right so it is always clickable above the pager
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .zIndex(1f),
-                contentAlignment = Alignment.TopEnd
-            ) {
-                TextButton(onClick = onNavigateToLogin) {
-                    Text("Skip")
                 }
             }
         }

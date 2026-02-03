@@ -30,16 +30,24 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var selectedRole by remember { mutableStateOf("STUDENT") }
+    var roleDropdownExpanded by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showSuccessToast by remember { mutableStateOf(false) }
     
     val authState by authViewModel.authState.collectAsState()
     val scrollState = rememberScrollState()
 
     LaunchedEffect(authState) {
-        if (authState is AuthState.Authenticated && 
-            (authState as AuthState.Authenticated).user.role == "STUDENT") {
-            onNavigateToHome()
+        when (authState) {
+            is AuthState.Authenticated -> {
+                showSuccessToast = true
+                kotlinx.coroutines.delay(1500)
+                authViewModel.clearError()
+                onNavigateToLogin()
+            }
+            else -> {}
         }
     }
 
@@ -48,18 +56,11 @@ fun RegisterScreen(
         topBar = {
             TopAppBar(
                 title = { 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "🏢",
-                            fontSize = 20.sp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Create Account")
-                    }
+                    Text("Create Account")
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateToLogin) {
-                        Text("< Back", fontSize = 16.sp)
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -102,6 +103,46 @@ fun RegisterScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
 
+            ExposedDropdownMenuBox(
+                expanded = roleDropdownExpanded,
+                onExpandedChange = { roleDropdownExpanded = !roleDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = if (selectedRole == "STUDENT") "Student" else "Staff",
+                    onValueChange = {},
+                    readOnly = true,
+                    placeholder = { Text("Select Role") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleDropdownExpanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = roleDropdownExpanded,
+                    onDismissRequest = { roleDropdownExpanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Student") },
+                        onClick = {
+                            selectedRole = "STUDENT"
+                            roleDropdownExpanded = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Staff") },
+                        onClick = {
+                            selectedRole = "STAFF"
+                            roleDropdownExpanded = false
+                        }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -113,6 +154,20 @@ fun RegisterScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) 
+                                Icons.Default.Visibility 
+                            else 
+                                Icons.Default.VisibilityOff,
+                            contentDescription = if (passwordVisible) 
+                                "Hide password" 
+                            else 
+                                "Show password"
+                        )
+                    }
+                },
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
             )
             
@@ -130,6 +185,20 @@ fun RegisterScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            imageVector = if (confirmPasswordVisible) 
+                                Icons.Default.Visibility 
+                            else 
+                                Icons.Default.VisibilityOff,
+                            contentDescription = if (confirmPasswordVisible) 
+                                "Hide password" 
+                            else 
+                                "Show password"
+                        )
+                    }
+                },
                 isError = password.isNotEmpty() && confirmPassword.isNotEmpty() && 
                          password != confirmPassword
             )
@@ -158,7 +227,7 @@ fun RegisterScreen(
             // Sign Up button
             Button(
                 onClick = {
-                    authViewModel.register(name, email, password, confirmPassword, "")
+                    authViewModel.register(name, email, password, confirmPassword, "", selectedRole)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,6 +252,22 @@ fun RegisterScreen(
                         "Sign Up",
                         fontSize = 16.sp,
                         color = androidx.compose.ui.graphics.Color.White
+                    )
+                }
+            }
+
+            if (showSuccessToast) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Account created! Please login to continue.",
+                        modifier = Modifier.padding(16.dp),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontSize = 14.sp
                     )
                 }
             }

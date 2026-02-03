@@ -28,18 +28,27 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isAdminMode by remember { mutableStateOf(false) }
+    var showSuccessToast by remember { mutableStateOf(false) }
 
     val authState by authViewModel.authState.collectAsState()
 
+    LaunchedEffect(Unit) {
+        authViewModel.clearError()
+    }
+
     LaunchedEffect(authState) {
-        if (authState is AuthState.Authenticated) {
-            val userRole = (authState as AuthState.Authenticated).user.role
-            if (userRole == "STUDENT") {
-                onNavigateToHome()
-            } else if (userRole == "ADMIN") {
-                onNavigateToAdminHome()
+        when (authState) {
+            is AuthState.Authenticated -> {
+                showSuccessToast = true
+                val userRole = (authState as AuthState.Authenticated).user.role
+                kotlinx.coroutines.delay(500)
+                if (userRole == "ADMIN") {
+                    onNavigateToAdminHome()
+                } else {
+                    onNavigateToHome()
+                }
             }
+            else -> {}
         }
     }
 
@@ -109,6 +118,20 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 placeholder = { Text("Password") },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            imageVector = if (passwordVisible) 
+                                Icons.Default.Visibility 
+                            else 
+                                Icons.Default.VisibilityOff,
+                            contentDescription = if (passwordVisible) 
+                                "Hide password" 
+                            else 
+                                "Show password"
+                        )
+                    }
+                },
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
             )
 
@@ -170,6 +193,22 @@ fun LoginScreen(
                     color = androidx.compose.ui.graphics.Color(0xFFFF0000),
                     fontSize = 14.sp
                 )
+            }
+
+            if (showSuccessToast) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Login successful!",
+                        modifier = Modifier.padding(16.dp),
+                        color = androidx.compose.ui.graphics.Color.White,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }
