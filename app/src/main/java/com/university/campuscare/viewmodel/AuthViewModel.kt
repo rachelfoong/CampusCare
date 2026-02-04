@@ -58,14 +58,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun register(name: String, email: String, password: String, confirmPassword: String, department: String = "") {
+    fun register(name: String, email: String, password: String, confirmPassword: String, department: String = "", role: String = "STUDENT") {
         viewModelScope.launch {
             if (password != confirmPassword) {
                 _authState.value = AuthState.Error("Passwords do not match")
                 return@launch
             }
 
-            authRepository.register(name, email, password, department).collect { result ->
+            authRepository.register(name, email, password, department, role).collect { result ->
                 when (result) {
                     is DataResult.Loading -> {
                         _authState.value = AuthState.Loading

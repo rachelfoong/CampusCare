@@ -2,14 +2,14 @@ package com.university.campuscare.ui
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.university.campuscare.ui.screens.*
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
-import androidx.navigation.NavType
-import androidx.navigation.navArgument
 import androidx.compose.runtime.collectAsState
 
 @Composable
@@ -96,6 +96,12 @@ fun CampusCareApp() {
                 },
                 onNavigateToHelpSupport = {
                     navController.navigate(Screen.HelpSupport.route)
+                },
+                onNavigateToChat = { issueId ->
+                    navController.navigate(Screen.Chat.createRoute(issueId))
+                },
+                onNavigateToIssueDetails = { issueId ->
+                    navController.navigate(Screen.IssueDetails.createRoute(issueId))
                 },
                 onLogout = {
                     authViewModel.logout()

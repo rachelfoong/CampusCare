@@ -117,9 +117,7 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(
-                    navController = navController,
-                    onNavigateToChat = onNavigateToChat)
+                0 -> AdminDashboardScreen(onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)

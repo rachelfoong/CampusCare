@@ -55,7 +55,7 @@ fun ChatScreen(
             listState.animateScrollToItem(messages.size - 1)
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(

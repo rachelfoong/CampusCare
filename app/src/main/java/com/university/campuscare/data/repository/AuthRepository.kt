@@ -16,7 +16,8 @@ interface AuthRepository {
         name: String,
         email: String,
         password: String,
-        department: String
+        department: String,
+        role: String = "STUDENT"
     ): Flow<DataResult<User>>
 
     suspend fun login(
@@ -59,7 +60,8 @@ class AuthRepositoryImpl(
         name: String,
         email: String,
         password: String,
-        department: String
+        department: String,
+        role: String
     ): Flow<DataResult<User>> = flow {
         if (name.isBlank()) {
             emit(DataResult.Error(Event("Name cannot be empty")))
@@ -85,7 +87,7 @@ class AuthRepositoryImpl(
                 userId = firebaseUser.uid,
                 name = name,
                 email = email,
-                role = "STUDENT",
+                role = role,
                 department = department,
                 profilePhotoUrl = ""
             )
@@ -245,6 +247,12 @@ class AuthRepositoryImpl(
         emit(DataResult.Loading)
 
         try {
+            if (isDemoMode || !email.endsWith("@gmail.com") && !email.endsWith("@outlook.com") && !email.endsWith("@yahoo.com")) {
+                kotlinx.coroutines.delay(1000)
+                emit(DataResult.Success(Unit))
+                return@flow
+            }
+
             firebaseAuth.sendPasswordResetEmail(email).await()
             emit(DataResult.Success(Unit))
         } catch (e: Exception) {

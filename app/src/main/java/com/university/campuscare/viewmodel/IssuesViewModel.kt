@@ -74,7 +74,7 @@ class IssuesViewModel : ViewModel() {
             }
         }
     }
-    
+
     fun setFilter(status: IssueStatus?) {
         _selectedFilter.value = status
     }
