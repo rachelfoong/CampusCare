@@ -19,6 +19,7 @@ data class IssueLocation(
     val block: String = "",
     val level: String = "",
     val room: String = "",
+    val address: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null
 )

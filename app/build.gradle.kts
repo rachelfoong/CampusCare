@@ -74,7 +74,10 @@ dependencies {
     
     // Google Play Services - Location
     implementation(libs.play.services.location)
-    
+    implementation(libs.google.maps)
+    implementation(libs.google.places)
+    implementation(libs.maps.compose)
+
     // DataStore for session management
     implementation(libs.androidx.datastore.preferences)
     
