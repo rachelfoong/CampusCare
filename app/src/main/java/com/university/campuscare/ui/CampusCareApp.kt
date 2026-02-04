@@ -115,14 +115,17 @@ fun CampusCareApp() {
 
         composable(Screen.AdminHome.route) {
             AdminHomeScreen(
+                navController = navController,
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onNavigateToChat = { issueId ->
-                    navController.navigate("chat/$issueId")
+                onNavigateToChat = { issueId, issueTitle ->
+                    navController.navigate(
+                        Screen.Chat.createRoute(issueId, issueTitle)
+                    )
                 },
                 authViewModel = authViewModel
             )
@@ -159,37 +162,42 @@ fun CampusCareApp() {
             )
         }
 
+// Chat Screen
         composable(
             route = Screen.Chat.route,
-            arguments = listOf(navArgument("issueId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("issueId") { type = NavType.StringType },
+                navArgument("issueTitle") { type = NavType.StringType }
+            )
         ) { backStackEntry ->
-            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
-
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
+            val issueTitle = backStackEntry.arguments?.getString("issueTitle") ?: ""
             val authState = authViewModel.authState.collectAsState().value
-            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
-            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
+            val currentUserId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+            val currentUserName = if (authState is AuthState.Authenticated) authState.user.name else ""
             val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
 
             ChatScreen(
                 issueId = issueId,
-                onNavigateBack = { navController.popBackStack() },
-                currentUserId = userId,
-                currentUserName = userName,
-                isAdmin = isAdmin
+                issueTitle = issueTitle,
+                currentUserId = currentUserId,
+                currentUserName = currentUserName,
+                isAdmin = isAdmin,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
+        // Issue Detail Screen
         composable(
-            route = Screen.IssueDetails.route,
+            route = Screen.IssueDetail.route,
             arguments = listOf(navArgument("issueId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
-
-            IssueDetailsScreen(
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
+            IssueDetailScreen(
                 issueId = issueId,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToChat = { id ->
-                    navController.navigate(Screen.Chat.createRoute(id))
+                onNavigateToChat = { id, title ->
+                    navController.navigate(Screen.Chat.createRoute(id, title))
                 }
             )
         }
