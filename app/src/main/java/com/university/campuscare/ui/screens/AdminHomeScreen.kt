@@ -36,7 +36,9 @@ sealed class AdminBottomNavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeScreen(
+    navController: androidx.navigation.NavController,
     onLogout: () -> Unit,
+    onNavigateToChat: (String, String) -> Unit = { _, _ -> },
     authViewModel: AuthViewModel,
     viewModel: AdminViewModel = viewModel(),
 ) {
@@ -115,9 +117,11 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(viewModel)
+                0 -> AdminDashboardScreen(
+                    navController = navController,
+                    onNavigateToChat = onNavigateToChat)
                 1 -> AdminReportsTab(viewModel)
-                2 -> AdminAnalyticsTab()
+                2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)
                 4 -> AdminSettingsTab(userName, onLogout)
             }
@@ -214,7 +218,9 @@ fun AdminReportsTab(viewModel: AdminViewModel) {
 }
 
 @Composable
-fun AdminAnalyticsTab() {
+fun AdminAnalyticsTab(viewModel: AdminViewModel) {
+    val analyticsData by viewModel.analyticsData.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -227,6 +233,7 @@ fun AdminAnalyticsTab() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // Report Statistics Card
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -239,16 +246,16 @@ fun AdminAnalyticsTab() {
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                AnalyticsRow("Total Reports This Month", "45")
-                AnalyticsRow("Average Resolution Time", "2.5 days")
-                AnalyticsRow("User Satisfaction", "4.2/5.0")
-                AnalyticsRow("Most Reported Issue", "Electrical")
+
+                AnalyticsRow("Total Reports This Month", analyticsData.totalReportsThisMonth.toString())
+                AnalyticsRow("Average Resolution Time", analyticsData.averageResolutionTime)
+                AnalyticsRow("Most Reported Issue", analyticsData.mostReportedIssue)
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Category Breakdown Card
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -261,11 +268,27 @@ fun AdminAnalyticsTab() {
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-                
-                CategoryBar("Electrical", 35, MaterialTheme.colorScheme.primary)
-                CategoryBar("Plumbing", 25, MaterialTheme.colorScheme.secondary)
-                CategoryBar("Furniture", 20, MaterialTheme.colorScheme.tertiary)
-                CategoryBar("Other", 20, MaterialTheme.colorScheme.error)
+
+                if (analyticsData.categoryBreakdown.isEmpty()) {
+                    Text(
+                        text = "No data available",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                } else {
+                    val categories = analyticsData.categoryBreakdown.entries.sortedByDescending { it.value }
+                    val colors = listOf(
+                        MaterialTheme.colorScheme.primary,
+                        MaterialTheme.colorScheme.secondary,
+                        MaterialTheme.colorScheme.tertiary,
+                        MaterialTheme.colorScheme.error
+                    )
+
+                    categories.forEachIndexed { index, (category, percentage) ->
+                        val color = colors.getOrElse(index) { MaterialTheme.colorScheme.primary }
+                        CategoryBar(category, percentage, color)
+                    }
+                }
             }
         }
     }
