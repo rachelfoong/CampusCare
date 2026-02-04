@@ -1,5 +1,11 @@
+
 package com.university.campuscare.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,13 +21,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.university.campuscare.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.launch
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,6 +52,40 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     var messageText by remember { mutableStateOf("") }
     val error by viewModel.error.collectAsState()
+
+    // Local UI states for location flow
+    val context = LocalContext.current
+    val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    var isRequestingLocation by remember { mutableStateOf(false) }
+    var locationToShare by remember { mutableStateOf<Location?>(null) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    // Permission launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            // Fetch a fresh location once permission is granted
+            coroutineScope.launch {
+                isRequestingLocation = true
+                val loc = fetchCurrentLocation(context,fusedClient)
+                isRequestingLocation = false
+                if (loc != null) {
+                    locationToShare = loc
+                    showConfirmDialog = true
+                } else {
+                    localError = "Unable to fetch location. Try again."
+                }
+            }
+        } else {
+            localError = "Location permission denied."
+        }
+    }
+
+    val combinedError = error ?: localError
 
     LaunchedEffect(issueId) {
         viewModel.loadMessages(issueId)
@@ -83,10 +131,10 @@ fun ChatScreen(
                 .padding(paddingValues)
                 .background(Color(0xFFF5F5F5))
         ) {
-            if (error != null) {
+            if (combinedError != null) {
                 Surface(color = Color.Red, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = error ?: "Unknown error",
+                        text = combinedError,
                         color = Color.White,
                         modifier = Modifier.padding(8.dp),
                         style = MaterialTheme.typography.bodySmall
@@ -124,7 +172,7 @@ fun ChatScreen(
                 }
             }
 
-            // Input Area
+            // Input Area with location button
             Surface(
                 color = Color.White,
                 shadowElevation = 4.dp
@@ -144,6 +192,55 @@ fun ChatScreen(
                         maxLines = 3
                     )
                     Spacer(modifier = Modifier.width(8.dp))
+
+                    // Location button (explicit intent)
+                    Box {
+                        IconButton(
+                            onClick = {
+                                // Always fetch fresh location on tap
+                                localError = null
+                                val hasPermission = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (hasPermission) {
+                                    coroutineScope.launch {
+                                        isRequestingLocation = true
+                                        val loc = fetchCurrentLocation(context, fusedClient)
+                                        isRequestingLocation = false
+                                        if (loc != null) {
+                                            locationToShare = loc
+                                            showConfirmDialog = true
+                                        } else {
+                                            localError = "Unable to fetch location. Try again."
+                                        }
+                                    }
+                                } else {
+                                    permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                }
+                            },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(Color(0xFFFF0000), CircleShape)
+                        ) {
+                            // simple emoji avoids icon dependency issues
+                            Text("📍", fontSize = 18.sp)
+                        }
+
+                        if (isRequestingLocation) {
+                            CircularProgressIndicator(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .align(Alignment.Center),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     IconButton(
                         onClick = {
                             if (messageText.isNotBlank()) {
@@ -172,7 +269,76 @@ fun ChatScreen(
             }
         }
     }
+
+    // Confirmation dialog: shows fetched coords and requires explicit send
+    if (showConfirmDialog && locationToShare != null) {
+        val lat = locationToShare!!.latitude
+        val lon = locationToShare!!.longitude
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false; locationToShare = null },
+            title = { Text("Share location?") },
+            text = {
+                Column {
+                    Text("Latitude: $lat")
+                    Text("Longitude: $lon")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("A link will be sent to the chat. This will not be sent automatically.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Format a Google Maps link and send as message
+                    val mapsLink = "https://maps.google.com/?q=$lat,$lon"
+                    viewModel.sendMessage(
+                        issueId = issueId,
+                        senderId = currentUserId,
+                        senderName = currentUserName,
+                        text = "Shared location: $mapsLink",
+                        isAdmin = isAdmin
+                    )
+                    showConfirmDialog = false
+                    locationToShare = null
+                }) {
+                    Text("Send")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showConfirmDialog = false
+                    locationToShare = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
+
+// Helper to fetch a fresh location exactly when requested
+private suspend fun fetchCurrentLocation(
+    context: android.content.Context,
+    fusedClient: FusedLocationProviderClient
+): Location? {
+    val granted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!granted) return null
+
+    return suspendCancellableCoroutine { cont ->
+        try {
+            fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+                .addOnSuccessListener { loc -> cont.resume(loc) }
+                .addOnFailureListener { cont.resume(null) }
+        } catch (_: SecurityException) {
+            cont.resume(null)
+        } catch (_: Exception) {
+            cont.resume(null)
+        }
+    }
+}
+
 
 @Composable
 fun MessageBubble(
