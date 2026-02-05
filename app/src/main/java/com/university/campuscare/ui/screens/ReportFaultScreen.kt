@@ -55,6 +55,7 @@ fun ReportFaultScreen(
     onNavigateBack: () -> Unit,
     userId: String,
     userName: String,
+    initialCategory: String? = null,
     viewModel: ReportViewModel = viewModel()
 ) {
     // UI state
@@ -168,6 +169,10 @@ fun ReportFaultScreen(
 
     LaunchedEffect(reportState) {
         if (reportState is ReportState.Success) onNavigateBack()
+    }
+
+    LaunchedEffect(initialCategory) {
+        viewModel.setInitialCategory(initialCategory)
     }
 
     Scaffold(

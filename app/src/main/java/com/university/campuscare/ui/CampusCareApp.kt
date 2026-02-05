@@ -88,8 +88,8 @@ fun CampusCareApp() {
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToReportFault = {
-                    navController.navigate(Screen.ReportFault.route)
+                onNavigateToReportFault = { category ->
+                    navController.navigate(Screen.ReportFault.createRoute(category))
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
@@ -131,14 +131,37 @@ fun CampusCareApp() {
             )
         }
 
-        composable(Screen.ReportFault.route) {
+//        composable(Screen.ReportFault.route) {
+//            val authState = authViewModel.authState.collectAsState().value
+//            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+//            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
+//            ReportFaultScreen(
+//                onNavigateBack = { navController.popBackStack() },
+//                userId = userId,
+//                userName = userName
+//            )
+//        }
+
+        composable(
+            route = Screen.ReportFault.route,
+            arguments = listOf(
+                navArgument("category") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
             val authState = authViewModel.authState.collectAsState().value
             val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
             val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
+            val category = backStackEntry.arguments?.getString("category")
+
             ReportFaultScreen(
                 onNavigateBack = { navController.popBackStack() },
                 userId = userId,
-                userName = userName
+                userName = userName,
+                initialCategory = category // Pass the category here
             )
         }
 

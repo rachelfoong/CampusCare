@@ -23,7 +23,7 @@ import com.university.campuscare.viewmodel.IssuesViewModel
 fun HomeTab(
     userName: String,
     userId: String,
-    onNavigateToReportFault: () -> Unit,
+    onNavigateToReportFault: (String?) -> Unit,
     viewModel: IssuesViewModel = viewModel()
 ) {
     val issues by viewModel.issues.collectAsState()
@@ -111,13 +111,13 @@ fun HomeTab(
                 FacilityCard(
                     icon = "🛗",
                     title = "Lift",
-                    onClick = onNavigateToReportFault,
+                    onClick = { onNavigateToReportFault("LIFT") },
                     modifier = Modifier.weight(1f)
                 )
                 FacilityCard(
                     icon = "🚽",
                     title = "Toilet",
-                    onClick = onNavigateToReportFault,
+                    onClick = { onNavigateToReportFault("TOILET") },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -134,13 +134,13 @@ fun HomeTab(
                 FacilityCard(
                     icon = "📶",
                     title = "Wi-Fi",
-                    onClick = onNavigateToReportFault,
+                    onClick = { onNavigateToReportFault("WIFI") },
                     modifier = Modifier.weight(1f)
                 )
                 FacilityCard(
                     icon = "🏫",
                     title = "Classroom",
-                    onClick = onNavigateToReportFault,
+                    onClick = { onNavigateToReportFault("CLASSROOM") },
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -157,7 +157,7 @@ fun HomeTab(
                 FacilityCard(
                     icon = "📋",
                     title = "Other",
-                    onClick = onNavigateToReportFault,
+                    onClick = { onNavigateToReportFault("OTHER") },
                     modifier = Modifier.weight(1f)
                 )
                 Spacer(modifier = Modifier.weight(1f))

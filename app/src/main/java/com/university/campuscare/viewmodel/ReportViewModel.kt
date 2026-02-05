@@ -50,7 +50,23 @@ class ReportViewModel : ViewModel() {
         _selectedCategory.value = category
     }
 
-    // firebase storage uri to the actual photo - upload function TODO
+    // handle the string input from Navigation
+    fun setInitialCategory(categoryName: String?) {
+        if (categoryName.isNullOrBlank()) return
+
+        try {
+            // Convert string (e.g., "LIFT") to Enum (IssueCategory.LIFT)
+            val category = IssueCategory.valueOf(categoryName.uppercase())
+            // Only set if none is currently selected (to prevent overwriting user choice on rotate)
+            if (_selectedCategory.value == null) {
+                _selectedCategory.value = category
+            }
+        } catch (e: IllegalArgumentException) {
+            Log.e("ReportViewModel", "Invalid category passed: $categoryName")
+        }
+    }
+
+    // firebase storage uri to the actual photo
     fun setPhotoUri(uri: String?) {
         _photoUri.value = uri
     }
