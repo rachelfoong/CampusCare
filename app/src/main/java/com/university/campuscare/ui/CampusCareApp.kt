@@ -191,8 +191,11 @@ fun CampusCareApp() {
             arguments = listOf(navArgument("issueId") { type = NavType.StringType })
         ) { backStackEntry ->
             val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
+            val authState = authViewModel.authState.collectAsState().value
+            val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
             IssueDetailScreen(
                 issueId = issueId,
+                isAdmin = isAdmin,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToChat = { id, title ->
                     navController.navigate(Screen.Chat.createRoute(id, title))

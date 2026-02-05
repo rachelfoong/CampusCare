@@ -1,6 +1,5 @@
 package com.university.campuscare.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +30,7 @@ import coil.compose.AsyncImage
 @Composable
 fun IssueDetailScreen(
     issueId: String,
+    isAdmin: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     viewModel: IssuesViewModel = viewModel()
@@ -109,6 +109,7 @@ fun IssueDetailScreen(
                 else -> {
                     IssueDetailContent(
                         issue = issue,
+                        isAdmin = isAdmin,
                         onNavigateToChat = onNavigateToChat
                     )
                 }
@@ -120,6 +121,7 @@ fun IssueDetailScreen(
 @Composable
 private fun IssueDetailContent(
     issue: Issue,
+    isAdmin: Boolean,
     onNavigateToChat: (String, String) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -215,29 +217,31 @@ private fun IssueDetailContent(
                 }
             }
         }
-        
+
         // Reporter Information
-        DetailSection(
-            title = "Reported By",
-            icon = Icons.Default.Person
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+        if (isAdmin) {
+            DetailSection(
+                title = "Reported By",
+                icon = Icons.Default.Person
             ) {
-                Text(
-                    text = issue.reporterName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Reporter ID: ${issue.reportedBy}...",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = issue.reporterName,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Reporter ID: ${issue.reportedBy}...",
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
-        
+
         // Timestamps
         DetailSection(
             title = "Timeline",
