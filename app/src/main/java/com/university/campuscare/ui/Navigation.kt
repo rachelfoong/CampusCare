@@ -11,10 +11,12 @@ sealed class Screen(val route: String) {
     object ReportFault : Screen("report_fault")
     object Settings : Screen("settings")
     object HelpSupport : Screen("help_support")
-    object Chat : Screen("chat/{issueId}") {
-        fun createRoute(issueId: String) = "chat/$issueId"
+    object Chat : Screen("chat/{issueId}?issueTitle={issueTitle}") {
+        fun createRoute(issueId: String, issueTitle: String = "Chat"): String {
+            return "chat/$issueId?issueTitle=$issueTitle"
+        }
     }
-    object IssueDetails : Screen("issue_details/{issueId}") {
-        fun createRoute(issueId: String) = "issue_details/$issueId"
+    object IssueDetail : Screen("issue_detail/{issueId}") {
+        fun createRoute(issueId: String) = "issue_detail/$issueId"
     }
 }

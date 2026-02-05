@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +25,7 @@ import com.university.campuscare.viewmodel.IssuesViewModel
 import com.university.campuscare.ui.components.StatusChip
 import java.text.SimpleDateFormat
 import java.util.*
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,6 +129,28 @@ private fun IssueDetailContent(
             .fillMaxSize()
             .verticalScroll(scrollState)
     ) {
+        // Photo Section
+//        if (issue.photoUrl.isNullOrBlank()) {
+//            AsyncImage(
+//                model = issue.photoUrl,
+//                contentDescription = "Issue Photo",
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(250.dp),
+//                contentScale = ContentScale.Crop
+//            )
+//        }
+//        else if (issue.photos.isNotEmpty()) {
+//            AsyncImage(
+//                model = issue.photos.first(),
+//                contentDescription = "Issue Photo",
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .height(250.dp),
+//                contentScale = ContentScale.Crop
+//            )
+//        }
+
         // Header Card with Status and ID
         Card(
             modifier = Modifier
@@ -318,9 +342,7 @@ private fun IssueDetailContent(
                     Button(
                         onClick = { onNavigateToChat(issue.id, issue.title) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF0000)
-                        ),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Icon(
@@ -331,6 +353,8 @@ private fun IssueDetailContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Open Chat")
                     }
+                } else {
+                    Text("Chat available once issue is accepted.", color = Color.Gray, fontSize = 14.sp)
                 }
             }
         }

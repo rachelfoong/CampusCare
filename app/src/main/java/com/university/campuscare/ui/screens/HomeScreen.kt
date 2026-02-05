@@ -33,7 +33,7 @@ fun HomeScreen(
     onNavigateToReportFault: () -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
-    onNavigateToChat: (String) -> Unit,
+    onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel

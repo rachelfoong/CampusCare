@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.viewmodel.AuthViewModel
@@ -36,7 +37,7 @@ sealed class AdminBottomNavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeScreen(
-    navController: androidx.navigation.NavController,
+    navController: NavController,
     onLogout: () -> Unit,
     onNavigateToChat: (String, String) -> Unit = { _, _ -> },
     authViewModel: AuthViewModel,
@@ -117,7 +118,7 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(onNavigateToChat, viewModel)
+                0 -> AdminDashboardScreen(navController, onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)

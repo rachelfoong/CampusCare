@@ -97,11 +97,11 @@ fun CampusCareApp() {
                 onNavigateToHelpSupport = {
                     navController.navigate(Screen.HelpSupport.route)
                 },
-                onNavigateToChat = { issueId ->
-                    navController.navigate(Screen.Chat.createRoute(issueId))
+                onNavigateToChat = { issueId, issueTitle ->
+                    navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
                 },
                 onNavigateToIssueDetails = { issueId ->
-                    navController.navigate(Screen.IssueDetails.createRoute(issueId))
+                    navController.navigate(Screen.IssueDetail.createRoute(issueId))
                 },
                 onLogout = {
                     authViewModel.logout()
@@ -162,7 +162,6 @@ fun CampusCareApp() {
             )
         }
 
-// Chat Screen
         composable(
             route = Screen.Chat.route,
             arguments = listOf(
@@ -187,7 +186,6 @@ fun CampusCareApp() {
             )
         }
 
-        // Issue Detail Screen
         composable(
             route = Screen.IssueDetail.route,
             arguments = listOf(navArgument("issueId") { type = NavType.StringType })
