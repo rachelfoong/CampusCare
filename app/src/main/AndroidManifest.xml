@@ -19,7 +19,7 @@
         <!-- Google maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDPW9IEG75sCLJuzHqG9OkK1Yy-YOWrynQ" />
+            android:value="" />
         <activity
             android:name="com.university.campuscare.MainActivity"
             android:exported="true"
