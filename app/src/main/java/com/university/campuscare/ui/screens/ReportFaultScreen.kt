@@ -2,7 +2,6 @@
 package com.university.campuscare.ui.screens
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,7 +26,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.university.campuscare.data.model.IssueCategory
@@ -35,9 +33,6 @@ import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
 import kotlinx.coroutines.launch
 import android.location.Geocoder
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.widget.Autocomplete
-import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -58,10 +53,6 @@ fun ReportFaultScreen(
     var block by remember { mutableStateOf("") }
     var level by remember { mutableStateOf("") }
     var room by remember { mutableStateOf("") }
-    var confirmedLatLng by remember { mutableStateOf<LatLng?>(null) }
-    var showMap by remember { mutableStateOf(false) }
-    var pendingLatLng by remember { mutableStateOf<LatLng?>(null) }
-    var confirmedAddress by remember { mutableStateOf<String?>(null) }
 
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val reportState by viewModel.reportState.collectAsState()
@@ -76,33 +67,45 @@ fun ReportFaultScreen(
     // Helper function to actively fetch location
     fun fetchAndSetLocation(onErrorMessage: String = "Failed to get location") {
         if (ContextCompat.checkSelfPermission(context, locationPermission) != PackageManager.PERMISSION_GRANTED) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Location permission required")
-            }
+            coroutineScope.launch { snackbarHostState.showSnackbar("Location permission required") }
             return
         }
 
         val cts = CancellationTokenSource()
-        fusedLocationClient.getCurrentLocation(
-            Priority.PRIORITY_HIGH_ACCURACY,
-            cts.token
-        ).addOnSuccessListener { loc ->
-            if (loc == null) {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Location unavailable")
+        try {
+            fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cts.token)
+                .addOnSuccessListener { loc: Location? ->
+                    if (loc != null) {
+                        coroutineScope.launch {
+                            try {
+                                val addresses = withContext(Dispatchers.IO) {
+                                    Geocoder(context, Locale.getDefault()).getFromLocation(loc.latitude, loc.longitude, 1)
+                                }
+                                val place = if (!addresses.isNullOrEmpty()) {
+                                    addresses[0].getAddressLine(0) ?: "${loc.latitude}, ${loc.longitude}"
+                                } else {
+                                    "${loc.latitude}, ${loc.longitude}"
+                                }
+                                room = place
+                                snackbarHostState.showSnackbar("Location added")
+                            } catch (e: IOException) {
+                                // network or service error during geocoding
+                                room = "${loc.latitude}, ${loc.longitude}"
+                                snackbarHostState.showSnackbar("Reverse geocoding failed")
+                            }
+                        }
+                    } else {
+                        coroutineScope.launch { snackbarHostState.showSnackbar("Location unavailable") }
+                    }
                 }
-                return@addOnSuccessListener
-            }
-
-            // Center the map at current location
-            pendingLatLng = LatLng(loc.latitude, loc.longitude)
-            showMap = true
-        }.addOnFailureListener {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(onErrorMessage)
-            }
+                .addOnFailureListener {
+                    coroutineScope.launch { snackbarHostState.showSnackbar(onErrorMessage) }
+                }
+        } catch (e: SecurityException) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Location permission missing") }
         }
     }
+
 
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -114,17 +117,6 @@ fun ReportFaultScreen(
             coroutineScope.launch { snackbarHostState.showSnackbar("Location permission denied") }
         }
     }
-
-//    val placesLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.StartActivityForResult()
-//    ) { result ->
-//        if (result.resultCode == Activity.RESULT_OK) {
-//            val place = Autocomplete.getPlaceFromIntent(result.data!!)
-//            selectedLatLng = place.latLng
-//            room = place.name ?: "${place.latLng?.latitude}, ${place.latLng?.longitude}"
-//            showMap = true
-//        }
-//    }
 
     LaunchedEffect(reportState) {
         if (reportState is ReportState.Success) onNavigateBack()
@@ -144,237 +136,94 @@ fun ReportFaultScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item {
+                Text("Issue Category", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CategoryButton("Lift", selectedCategory == IssueCategory.LIFT, { viewModel.selectCategory(IssueCategory.LIFT) }, Modifier.weight(1f))
+                    CategoryButton("Toilet", selectedCategory == IssueCategory.TOILET, { viewModel.selectCategory(IssueCategory.TOILET) }, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    CategoryButton("Wi-Fi", selectedCategory == IssueCategory.WIFI, { viewModel.selectCategory(IssueCategory.WIFI) }, Modifier.weight(1f))
+                    CategoryButton("Classroom", selectedCategory == IssueCategory.CLASSROOM, { viewModel.selectCategory(IssueCategory.CLASSROOM) }, Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(8.dp))
+                CategoryButton("Other", selectedCategory == IssueCategory.OTHER, { viewModel.selectCategory(IssueCategory.OTHER) }, Modifier.fillMaxWidth(0.5f))
+            }
 
-            if (showMap && pendingLatLng != null) {
-                // to display map in full screen
-                GeolocationMapperScreen(
-                    initialLatLng = pendingLatLng!!,
-                    onLocationConfirmed = { latLng ->
-                        confirmedLatLng = latLng
-                        coroutineScope.launch {
-                            try {
-                                val addresses = withContext(Dispatchers.IO) {
-                                    Geocoder(context, Locale.getDefault())
-                                        .getFromLocation(latLng.latitude, latLng.longitude, 1)
-                                }
+            item {
+                OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Brief description of the problem") }, shape = RoundedCornerShape(8.dp))
+            }
 
-                                val address = addresses?.firstOrNull()?.getAddressLine(0)
-                                    ?: "${latLng.latitude}, ${latLng.longitude}"
+            item {
+                OutlinedTextField(value = description, onValueChange = { description = it }, modifier = Modifier.fillMaxWidth().height(120.dp), placeholder = { Text("Provide more details about the issue") }, shape = RoundedCornerShape(8.dp), maxLines = 5)
+            }
 
-                                confirmedAddress = address
-                                snackbarHostState.showSnackbar("Location added")
-                            } catch (e: IOException) {
-                                confirmedAddress = "${latLng.latitude}, ${latLng.longitude}"
-                                snackbarHostState.showSnackbar("Reverse geocoding failed")
-                            }
-                        }
-                        showMap = false
-                    },
-                    onBack = { showMap = false }
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Text("Issue Category", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            CategoryButton(
-                                "Lift",
-                                selectedCategory == IssueCategory.LIFT,
-                                { viewModel.selectCategory(IssueCategory.LIFT) },
-                                Modifier.weight(1f)
-                            )
-                            CategoryButton(
-                                "Toilet",
-                                selectedCategory == IssueCategory.TOILET,
-                                { viewModel.selectCategory(IssueCategory.TOILET) },
-                                Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            CategoryButton(
-                                "Wi-Fi",
-                                selectedCategory == IssueCategory.WIFI,
-                                { viewModel.selectCategory(IssueCategory.WIFI) },
-                                Modifier.weight(1f)
-                            )
-                            CategoryButton(
-                                "Classroom",
-                                selectedCategory == IssueCategory.CLASSROOM,
-                                { viewModel.selectCategory(IssueCategory.CLASSROOM) },
-                                Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        CategoryButton(
-                            "Other",
-                            selectedCategory == IssueCategory.OTHER,
-                            { viewModel.selectCategory(IssueCategory.OTHER) },
-                            Modifier.fillMaxWidth(0.5f)
-                        )
-                    }
+            item {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(value = block, onValueChange = { block = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Block A") }, shape = RoundedCornerShape(8.dp))
+                    OutlinedTextField(value = level, onValueChange = { level = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Level 3") }, shape = RoundedCornerShape(8.dp))
+                }
+            }
 
-                    item {
-                        OutlinedTextField(
-                            value = title,
-                            onValueChange = { title = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Brief description of the problem") },
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                    }
+            item {
+                OutlinedTextField(value = room, onValueChange = { room = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Room number or area description") }, shape = RoundedCornerShape(8.dp))
+            }
 
-                    item {
-                        OutlinedTextField(
-                            value = description,
-                            onValueChange = { description = it },
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
-                            placeholder = { Text("Provide more details about the issue") },
-                            shape = RoundedCornerShape(8.dp),
-                            maxLines = 5
-                        )
-                    }
-
-                    item {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = block,
-                                onValueChange = { block = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("e.g., Block A") },
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            OutlinedTextField(
-                                value = level,
-                                onValueChange = { level = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("e.g., Level 3") },
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                        }
-                    }
-
-                    item {
-                        OutlinedTextField(
-                            value = room,
-                            onValueChange = { room = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Room number or area description") },
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                    }
-
-                    item {
-                        Text("Photo & Location", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            PhotoLocationCard(
-                                Icons.Default.CameraAlt,
-                                "Take Photo",
-                                onClick = { /* implement camera */ },
-                                Modifier.weight(1f)
-                            )
-                            PhotoLocationCard(
-                                Icons.Default.LocationOn,
-                                "Add Location",
-                                onClick = {
-                                    // Check permission or request, then actively fetch and set `room`
-                                    if (ContextCompat.checkSelfPermission(
-                                            context,
-                                            locationPermission
-                                        ) == PackageManager.PERMISSION_GRANTED
-                                    ) {
-                                        // get current location
-                                        fetchAndSetLocation()
-                                        
-                                    } else {
-                                        permissionLauncher.launch(locationPermission)
-                                    }
-                                },
-                                Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    item {
-                        OutlinedTextField(
-                            value = confirmedAddress?: "",
-                            onValueChange = { /* no-op because readOnly is true */ },
-                            modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Selected location") },
-                            shape = RoundedCornerShape(8.dp),
-                            readOnly = true
-                        )
-                        Spacer(Modifier.height(8.dp))
-                    }
-
-                    if (reportState is ReportState.Error) {
-                        item {
-                            Text(
-                                (reportState as ReportState.Error).message,
-                                color = Color(0xFFFF0000),
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    item {
-                        Spacer(Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                viewModel.submitReport(
-                                    title,
-                                    description,
-                                    block,
-                                    level,
-                                    room,
-                                    confirmedAddress,
-                                    confirmedLatLng?.latitude,
-                                    confirmedLatLng?.longitude,
-                                    userId,
-                                    userName
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
-                            enabled = reportState !is ReportState.Loading,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            if (reportState is ReportState.Loading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White
-                                )
+            item {
+                Text("Photo & Location", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(8.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PhotoLocationCard(Icons.Default.CameraAlt, "Take Photo", onClick = { /* implement camera */ }, Modifier.weight(1f))
+                    PhotoLocationCard(
+                        Icons.Default.LocationOn,
+                        "Add Location",
+                        onClick = {
+                            // Check permission or request, then actively fetch and set `room`
+                            if (ContextCompat.checkSelfPermission(context, locationPermission) == PackageManager.PERMISSION_GRANTED) {
+                                fetchAndSetLocation()
                             } else {
-                                Text("Submit Report", fontSize = 16.sp)
+                                permissionLauncher.launch(locationPermission)
                             }
-                        }
+                        },
+                        Modifier.weight(1f)
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                if (room.isNotBlank()) {
+                    Text("Location added: $room", fontSize = 14.sp, color = Color(0xFF007700))
+                }
+            }
+
+            if (reportState is ReportState.Error) {
+                item {
+                    Text((reportState as ReportState.Error).message, color = Color(0xFFFF0000), fontSize = 14.sp)
+                }
+            }
+
+            item {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        viewModel.submitReport(title, description, block, level, room, userId, userName)
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
+                    enabled = reportState !is ReportState.Loading,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    if (reportState is ReportState.Loading) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                    } else {
+                        Text("Submit Report", fontSize = 16.sp)
                     }
                 }
             }
