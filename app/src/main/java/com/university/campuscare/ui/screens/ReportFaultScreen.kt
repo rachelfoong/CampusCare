@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,13 +36,22 @@ import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
 import kotlinx.coroutines.launch
 import android.location.Geocoder
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,13 +75,52 @@ fun ReportFaultScreen(
 
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val reportState by viewModel.reportState.collectAsState()
+    val photoUri by viewModel.photoUri.collectAsState()
 
     // Helpers (declare before launcher)
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraPermission = Manifest.permission.CAMERA
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
+
+    // Create temp file and URI for camera
+    fun createTempPictureUri(): Uri {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "JPEG_" + timeStamp + "_"
+        val image = File.createTempFile(imageFileName, ".jpg", context.externalCacheDir)
+        return FileProvider.getUriForFile(
+            context,
+            context.packageName + ".fileprovider",
+            image
+        )
+    }
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempPhotoUri != null) {
+            // save URI string to ViewModel
+            viewModel.setPhotoUri(tempPhotoUri.toString())
+        }
+    }
+
+    // Permission launcher for camera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = createTempPictureUri()
+            tempPhotoUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Camera permission denied") }
+        }
+    }
+
 
     // Helper function to actively fetch location
     fun fetchAndSetLocation(onErrorMessage: String = "Failed to get location") {
@@ -290,14 +339,50 @@ fun ReportFaultScreen(
                     item {
                         Text("Photo & Location", fontSize = 16.sp, fontWeight = FontWeight.Medium)
                         Spacer(Modifier.height(8.dp))
+
+                        // Preview section: show image if taken
+                        if (photoUri != null) {
+                            Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                                AsyncImage(
+                                    model = photoUri,
+                                    contentDescription = "Issue Photo",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(bottom = 8.dp),
+                                    contentScale = ContentScale.FillWidth
+                                )
+                                // Clear button
+                                IconButton(
+                                    onClick = { viewModel.setPhotoUri(null) },
+                                    modifier = Modifier.align(Alignment.TopEnd).background(Color.White.copy(alpha = 0.7f),
+                                        CircleShape
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = "Remove Photo", tint = Color.Red)
+                                }
+                            }
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             PhotoLocationCard(
                                 Icons.Default.CameraAlt,
-                                "Take Photo",
-                                onClick = { /* implement camera */ },
+                                if (photoUri == null) "Take Photo" else "Retake Photo",
+                                onClick = {
+                                    if (ContextCompat.checkSelfPermission(
+                                            context,
+                                            cameraPermission
+                                        ) == PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        val uri = createTempPictureUri()
+                                        tempPhotoUri = uri
+                                        cameraLauncher.launch(uri)
+                                    } else {
+                                        cameraPermissionLauncher.launch(cameraPermission)
+                                    }
+                                },
                                 Modifier.weight(1f)
                             )
                             PhotoLocationCard(
@@ -349,6 +434,7 @@ fun ReportFaultScreen(
                         Button(
                             onClick = {
                                 viewModel.submitReport(
+                                    context,
                                     title,
                                     description,
                                     block,

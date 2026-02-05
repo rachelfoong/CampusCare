@@ -1,6 +1,8 @@
 package com.university.campuscare.viewmodel
 
+import android.content.Context
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
@@ -10,6 +12,7 @@ import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
+import com.university.campuscare.utils.PhotoUploadHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -55,6 +58,7 @@ class ReportViewModel : ViewModel() {
     // Create issue in Firebase
     // TODO - store location lat/long
     fun submitReport(
+        context: Context,
         title: String,
         description: String,
         block: String,
@@ -77,6 +81,24 @@ class ReportViewModel : ViewModel() {
                     _reportState.value = ReportState.Error("Please provide a brief description")
                     return@launch
                 }
+
+                _reportState.value = ReportState.Loading
+
+                // Upload photo if it exists
+                var remotePhotoUrl: String? = null
+                val localPhotoUri = _photoUri.value
+
+                if (localPhotoUri != null) {
+                    val uploadHelper = PhotoUploadHelper(context)
+                    val result = uploadHelper.uploadPhoto(localPhotoUri.toUri(), userId)
+
+                    if (result.isSuccess) {
+                        remotePhotoUrl = result.getOrNull()
+                    } else {
+                        _reportState.value = ReportState.Error(result.exceptionOrNull()?.message ?: "Failed to upload photo")
+                        return@launch
+                    }
+                }
                 
                 val issue = Issue(
                     category = _selectedCategory.value!!.name,
@@ -93,14 +115,12 @@ class ReportViewModel : ViewModel() {
                     status = IssueStatus.PENDING,
                     reportedBy = userId,
                     reporterName = userName,
-                    photoUrl = _photoUri.value
+                    photoUrl = remotePhotoUrl
                 )
 
                 issuesRepository.submitIssue(issue).collect { result ->
                     when(result) {
-                        is DataResult.Loading -> {
-                            _reportState.value = ReportState.Loading
-                        }
+                        is DataResult.Loading -> { /* already loading */ }
                         is DataResult.Success -> {
                             _reportState.value = ReportState.Success
                             // Reset form
@@ -108,7 +128,7 @@ class ReportViewModel : ViewModel() {
                             _photoUri.value = null
                         }
                         is DataResult.Error -> {
-                            _reportState.value = ReportState.Error(result.error.peekContent() ?: "Failed to submit report")
+                            _reportState.value = ReportState.Error(result.error.peekContent())
                         }
                         is DataResult.Idle -> {
                             _reportState.value = ReportState.Idle

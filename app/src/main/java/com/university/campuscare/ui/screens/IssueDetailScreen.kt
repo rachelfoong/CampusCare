@@ -129,28 +129,6 @@ private fun IssueDetailContent(
             .fillMaxSize()
             .verticalScroll(scrollState)
     ) {
-        // Photo Section
-//        if (issue.photoUrl.isNullOrBlank()) {
-//            AsyncImage(
-//                model = issue.photoUrl,
-//                contentDescription = "Issue Photo",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(250.dp),
-//                contentScale = ContentScale.Crop
-//            )
-//        }
-//        else if (issue.photos.isNotEmpty()) {
-//            AsyncImage(
-//                model = issue.photos.first(),
-//                contentDescription = "Issue Photo",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(250.dp),
-//                contentScale = ContentScale.Crop
-//            )
-//        }
-
         // Header Card with Status and ID
         Card(
             modifier = Modifier
@@ -281,18 +259,20 @@ private fun IssueDetailContent(
             }
         }
         
-        // Photo Section (if available)
+        // Photo Section
         if (!issue.photoUrl.isNullOrBlank()) {
             DetailSection(
                 title = "Photo Evidence",
                 icon = Icons.Default.Image
             ) {
-                Text(
-                    text = "Photo attached",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                AsyncImage(
+                    model = issue.photoUrl,
+                    contentDescription = "Issue Photo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.FillWidth
                 )
-                // Add image loading here if needed
             }
         }
         
