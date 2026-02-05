@@ -60,9 +60,6 @@ class ReportViewModel : ViewModel() {
         block: String,
         level: String,
         room: String,
-        address: String?,
-        latitude: Double?,
-        longitude: Double?,
         userId: String,
         userName: String
     ) {
@@ -85,10 +82,7 @@ class ReportViewModel : ViewModel() {
                     location = IssueLocation(
                         block = block,
                         level = level,
-                        room = room,
-                        address = address,
-                        latitude = latitude,
-                        longitude = longitude
+                        room = room
                     ),
                     status = IssueStatus.PENDING,
                     reportedBy = userId,
