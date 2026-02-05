@@ -22,7 +22,12 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun IssuesTab(userId: String, onNavigateToChat: (String) -> Unit, onNavigateToIssueDetails: (String) -> Unit, viewModel: IssuesViewModel = viewModel()) {
+fun IssuesTab(
+    userId: String,
+    onNavigateToChat: (String, String) -> Unit,
+    onNavigateToIssueDetails: (String) -> Unit,
+    viewModel: IssuesViewModel = viewModel()
+) {
     val issues by viewModel.issues.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val issuesState by viewModel.issuesState.collectAsState()
@@ -77,7 +82,7 @@ fun IssuesTab(userId: String, onNavigateToChat: (String) -> Unit, onNavigateToIs
                             location = issue.location.block,
                             onClick = { onNavigateToIssueDetails(issue.id) },
                             onChatClick = if (issue.status == com.university.campuscare.data.model.IssueStatus.IN_PROGRESS) {
-                                { onNavigateToChat(issue.id) }
+                                { onNavigateToChat(issue.id, issue.title) }
                             } else null
                         )
                     }
