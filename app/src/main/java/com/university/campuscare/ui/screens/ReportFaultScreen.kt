@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,10 +34,19 @@ import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
 import kotlinx.coroutines.launch
 import android.location.Geocoder
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,6 +55,7 @@ fun ReportFaultScreen(
     onNavigateBack: () -> Unit,
     userId: String,
     userName: String,
+    initialCategory: String? = null,
     viewModel: ReportViewModel = viewModel()
 ) {
     // UI state
@@ -56,13 +67,52 @@ fun ReportFaultScreen(
 
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val reportState by viewModel.reportState.collectAsState()
+    val photoUri by viewModel.photoUri.collectAsState()
 
     // Helpers (declare before launcher)
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraPermission = Manifest.permission.CAMERA
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val locationPermission = Manifest.permission.ACCESS_FINE_LOCATION
+
+    // Create temp file and URI for camera
+    fun createTempPictureUri(): Uri {
+        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+        val imageFileName = "JPEG_" + timeStamp + "_"
+        val image = File.createTempFile(imageFileName, ".jpg", context.externalCacheDir)
+        return FileProvider.getUriForFile(
+            context,
+            context.packageName + ".fileprovider",
+            image
+        )
+    }
+
+    // Camera launcher
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && tempPhotoUri != null) {
+            // save URI string to ViewModel
+            viewModel.setPhotoUri(tempPhotoUri.toString())
+        }
+    }
+
+    // Permission launcher for camera
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = createTempPictureUri()
+            tempPhotoUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Camera permission denied") }
+        }
+    }
+
 
     // Helper function to actively fetch location
     fun fetchAndSetLocation(onErrorMessage: String = "Failed to get location") {
@@ -106,7 +156,6 @@ fun ReportFaultScreen(
         }
     }
 
-
     // Permission launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -120,6 +169,10 @@ fun ReportFaultScreen(
 
     LaunchedEffect(reportState) {
         if (reportState is ReportState.Success) onNavigateBack()
+    }
+
+    LaunchedEffect(initialCategory) {
+        viewModel.setInitialCategory(initialCategory)
     }
 
     Scaffold(
@@ -136,94 +189,131 @@ fun ReportFaultScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            item {
-                Text("Issue Category", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CategoryButton("Lift", selectedCategory == IssueCategory.LIFT, { viewModel.selectCategory(IssueCategory.LIFT) }, Modifier.weight(1f))
-                    CategoryButton("Toilet", selectedCategory == IssueCategory.TOILET, { viewModel.selectCategory(IssueCategory.TOILET) }, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CategoryButton("Wi-Fi", selectedCategory == IssueCategory.WIFI, { viewModel.selectCategory(IssueCategory.WIFI) }, Modifier.weight(1f))
-                    CategoryButton("Classroom", selectedCategory == IssueCategory.CLASSROOM, { viewModel.selectCategory(IssueCategory.CLASSROOM) }, Modifier.weight(1f))
-                }
-                Spacer(Modifier.height(8.dp))
-                CategoryButton("Other", selectedCategory == IssueCategory.OTHER, { viewModel.selectCategory(IssueCategory.OTHER) }, Modifier.fillMaxWidth(0.5f))
-            }
-
-            item {
-                OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Brief description of the problem") }, shape = RoundedCornerShape(8.dp))
-            }
-
-            item {
-                OutlinedTextField(value = description, onValueChange = { description = it }, modifier = Modifier.fillMaxWidth().height(120.dp), placeholder = { Text("Provide more details about the issue") }, shape = RoundedCornerShape(8.dp), maxLines = 5)
-            }
-
-            item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(value = block, onValueChange = { block = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Block A") }, shape = RoundedCornerShape(8.dp))
-                    OutlinedTextField(value = level, onValueChange = { level = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Level 3") }, shape = RoundedCornerShape(8.dp))
-                }
-            }
-
-            item {
-                OutlinedTextField(value = room, onValueChange = { room = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Room number or area description") }, shape = RoundedCornerShape(8.dp))
-            }
-
-            item {
-                Text("Photo & Location", fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PhotoLocationCard(Icons.Default.CameraAlt, "Take Photo", onClick = { /* implement camera */ }, Modifier.weight(1f))
-                    PhotoLocationCard(
-                        Icons.Default.LocationOn,
-                        "Add Location",
-                        onClick = {
-                            // Check permission or request, then actively fetch and set `room`
-                            if (ContextCompat.checkSelfPermission(context, locationPermission) == PackageManager.PERMISSION_GRANTED) {
-                                fetchAndSetLocation()
-                            } else {
-                                permissionLauncher.launch(locationPermission)
-                            }
-                        },
-                        Modifier.weight(1f)
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                if (room.isNotBlank()) {
-                    Text("Location added: $room", fontSize = 14.sp, color = Color(0xFF007700))
-                }
-            }
-
-            if (reportState is ReportState.Error) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 item {
-                    Text((reportState as ReportState.Error).message, color = Color(0xFFFF0000), fontSize = 14.sp)
+                    Text("Issue Category", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CategoryButton("Lift", selectedCategory == IssueCategory.LIFT, { viewModel.selectCategory(IssueCategory.LIFT) }, Modifier.weight(1f))
+                        CategoryButton("Toilet", selectedCategory == IssueCategory.TOILET, { viewModel.selectCategory(IssueCategory.TOILET) }, Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CategoryButton("Wi-Fi", selectedCategory == IssueCategory.WIFI, { viewModel.selectCategory(IssueCategory.WIFI) }, Modifier.weight(1f))
+                        CategoryButton("Classroom", selectedCategory == IssueCategory.CLASSROOM, { viewModel.selectCategory(IssueCategory.CLASSROOM) }, Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    CategoryButton("Other", selectedCategory == IssueCategory.OTHER, { viewModel.selectCategory(IssueCategory.OTHER) }, Modifier.fillMaxWidth(0.5f))
                 }
-            }
 
-            item {
-                Spacer(Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        viewModel.submitReport(title, description, block, level, room, userId, userName)
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
-                    enabled = reportState !is ReportState.Loading,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    if (reportState is ReportState.Loading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
-                    } else {
-                        Text("Submit Report", fontSize = 16.sp)
+                item {
+                    OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Brief description of the problem") }, shape = RoundedCornerShape(8.dp))
+                }
+
+                item {
+                    OutlinedTextField(value = description, onValueChange = { description = it }, modifier = Modifier.fillMaxWidth().height(120.dp), placeholder = { Text("Provide more details about the issue") }, shape = RoundedCornerShape(8.dp), maxLines = 5)
+                }
+
+                item {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedTextField(value = block, onValueChange = { block = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Block A") }, shape = RoundedCornerShape(8.dp))
+                        OutlinedTextField(value = level, onValueChange = { level = it }, modifier = Modifier.weight(1f), placeholder = { Text("e.g., Level 3") }, shape = RoundedCornerShape(8.dp))
+                    }
+                }
+
+                item {
+                    OutlinedTextField(value = room, onValueChange = { room = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Room number or area description") }, shape = RoundedCornerShape(8.dp))
+                }
+
+                item {
+                    Text("Photo & Location", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    Spacer(Modifier.height(8.dp))
+
+                    // Preview section: show image if taken
+                    if (photoUri != null) {
+                        Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+                            AsyncImage(
+                                model = photoUri,
+                                contentDescription = "Issue Photo",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(bottom = 8.dp),
+                                contentScale = ContentScale.FillWidth
+                            )
+                            // Clear button
+                            IconButton(
+                                onClick = { viewModel.setPhotoUri(null) },
+                                modifier = Modifier.align(Alignment.TopEnd).background(Color.White.copy(alpha = 0.7f),
+                                    CircleShape
+                                )
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Remove Photo", tint = Color.Red)
+                            }
+                        }
+                    }
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        PhotoLocationCard(
+                            Icons.Default.CameraAlt,
+                            if (photoUri == null) "Take Photo" else "Retake Photo",
+                            onClick = {
+                                if (ContextCompat.checkSelfPermission(context, cameraPermission) == PackageManager.PERMISSION_GRANTED) {
+                                    val uri = createTempPictureUri()
+                                    tempPhotoUri = uri
+                                    cameraLauncher.launch(uri)
+                                } else {
+                                    cameraPermissionLauncher.launch(cameraPermission)
+                                }
+                            },
+                            Modifier.weight(1f)
+                        )
+                        PhotoLocationCard(
+                            Icons.Default.LocationOn,
+                            "Add Location",
+                            onClick = {
+                                // Check permission or request, then actively fetch and set `room`
+                                if (ContextCompat.checkSelfPermission(context, locationPermission) == PackageManager.PERMISSION_GRANTED) {
+                                    fetchAndSetLocation()
+                                } else {
+                                    permissionLauncher.launch(locationPermission)
+                                }
+                            },
+                            Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    if (room.isNotBlank()) {
+                        Text("Location added: $room", fontSize = 14.sp, color = Color(0xFF007700))
+                    }
+                }
+
+                if (reportState is ReportState.Error) {
+                    item {
+                        Text((reportState as ReportState.Error).message, color = Color(0xFFFF0000), fontSize = 14.sp)
+                    }
+                }
+
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            viewModel.submitReport(context, title, description, block, level, room, userId, userName)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
+                        enabled = reportState !is ReportState.Loading,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        if (reportState is ReportState.Loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White)
+                        } else {
+                            Text("Submit Report", fontSize = 16.sp)
                     }
                 }
             }

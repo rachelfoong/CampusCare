@@ -1,6 +1,5 @@
 package com.university.campuscare.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +30,7 @@ import coil.compose.AsyncImage
 @Composable
 fun IssueDetailScreen(
     issueId: String,
+    isAdmin: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     viewModel: IssuesViewModel = viewModel()
@@ -109,6 +109,7 @@ fun IssueDetailScreen(
                 else -> {
                     IssueDetailContent(
                         issue = issue,
+                        isAdmin = isAdmin,
                         onNavigateToChat = onNavigateToChat
                     )
                 }
@@ -120,6 +121,7 @@ fun IssueDetailScreen(
 @Composable
 private fun IssueDetailContent(
     issue: Issue,
+    isAdmin: Boolean,
     onNavigateToChat: (String, String) -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -129,28 +131,6 @@ private fun IssueDetailContent(
             .fillMaxSize()
             .verticalScroll(scrollState)
     ) {
-        // Photo Section
-//        if (issue.photoUrl.isNullOrBlank()) {
-//            AsyncImage(
-//                model = issue.photoUrl,
-//                contentDescription = "Issue Photo",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(250.dp),
-//                contentScale = ContentScale.Crop
-//            )
-//        }
-//        else if (issue.photos.isNotEmpty()) {
-//            AsyncImage(
-//                model = issue.photos.first(),
-//                contentDescription = "Issue Photo",
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .height(250.dp),
-//                contentScale = ContentScale.Crop
-//            )
-//        }
-
         // Header Card with Status and ID
         Card(
             modifier = Modifier
@@ -237,29 +217,31 @@ private fun IssueDetailContent(
                 }
             }
         }
-        
+
         // Reporter Information
-        DetailSection(
-            title = "Reported By",
-            icon = Icons.Default.Person
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+        if (isAdmin) {
+            DetailSection(
+                title = "Reported By",
+                icon = Icons.Default.Person
             ) {
-                Text(
-                    text = issue.reporterName,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black
-                )
-                Text(
-                    text = "Reporter ID: ${issue.reportedBy}...",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = issue.reporterName,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "Reporter ID: ${issue.reportedBy}...",
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                }
             }
         }
-        
+
         // Timestamps
         DetailSection(
             title = "Timeline",
@@ -281,18 +263,20 @@ private fun IssueDetailContent(
             }
         }
         
-        // Photo Section (if available)
+        // Photo Section
         if (!issue.photoUrl.isNullOrBlank()) {
             DetailSection(
                 title = "Photo Evidence",
                 icon = Icons.Default.Image
             ) {
-                Text(
-                    text = "Photo attached",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+                AsyncImage(
+                    model = issue.photoUrl,
+                    contentDescription = "Issue Photo",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
+                    contentScale = ContentScale.FillWidth
                 )
-                // Add image loading here if needed
             }
         }
         
