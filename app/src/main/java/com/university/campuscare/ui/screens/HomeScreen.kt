@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.university.campuscare.ui.screens.tabs.AlertsTab
 import com.university.campuscare.ui.screens.tabs.HomeTab
 import com.university.campuscare.ui.screens.tabs.IssuesTab
+import com.university.campuscare.ui.screens.tabs.MessagesTab
 import com.university.campuscare.ui.screens.tabs.ProfileTab
 import com.university.campuscare.viewmodel.AuthViewModel
 
@@ -23,6 +24,7 @@ sealed class BottomNavItem(
 ) {
     object Home : BottomNavItem("home", "Home", Icons.Default.Home)
     object Issues : BottomNavItem("issues", "Issues", Icons.AutoMirrored.Filled.List)
+    object Messages : BottomNavItem("messages", "Messages", Icons.Default.Email)
     object Alerts : BottomNavItem("alerts", "Alerts", Icons.Default.Notifications)
     object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }
@@ -34,6 +36,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
     onNavigateToChat: (String, String) -> Unit,
+    onNavigateToDirectChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
@@ -43,6 +46,7 @@ fun HomeScreen(
     val bottomNavItems = listOf(
         BottomNavItem.Home,
         BottomNavItem.Issues,
+        BottomNavItem.Messages,
         BottomNavItem.Alerts,
         BottomNavItem.Profile
     )
@@ -89,8 +93,9 @@ fun HomeScreen(
             when (selectedTab) {
                 0 -> HomeTab(userName, userId, onNavigateToReportFault)
                 1 -> IssuesTab(userId, onNavigateToChat, onNavigateToIssueDetails)
-                2 -> AlertsTab(userId)
-                3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
+                2 -> MessagesTab(userId, onNavigateToDirectChat)
+                3 -> AlertsTab(userId)
+                4 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
             }
         }
     }
