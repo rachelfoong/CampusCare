@@ -180,6 +180,7 @@ fun CampusCareApp() {
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
+                onNavigateToUserProfile = { navController.navigate(Screen.UserProfile.route) },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -187,6 +188,15 @@ fun CampusCareApp() {
                     }
                 },
                 authViewModel = authViewModel
+            )
+        }
+
+        composable(Screen.UserProfile.route) {
+            val authState = authViewModel.authState.collectAsState().value
+            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+            UserProfileScreen(
+                userId = userId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
