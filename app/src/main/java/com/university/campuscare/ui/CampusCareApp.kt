@@ -88,8 +88,8 @@ fun CampusCareApp() {
 
         composable(Screen.Home.route) {
             HomeScreen(
-                onNavigateToReportFault = { category ->
-                    navController.navigate(Screen.ReportFault.createRoute(category))
+                onNavigateToReportFault = {
+                    navController.navigate(Screen.ReportFault.route)
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
@@ -97,11 +97,11 @@ fun CampusCareApp() {
                 onNavigateToHelpSupport = {
                     navController.navigate(Screen.HelpSupport.route)
                 },
-                onNavigateToChat = { issueId, issueTitle ->
-                    navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
+                onNavigateToChat = { issueId ->
+                    navController.navigate(Screen.Chat.createRoute(issueId))
                 },
                 onNavigateToIssueDetails = { issueId ->
-                    navController.navigate(Screen.IssueDetail.createRoute(issueId))
+                    navController.navigate(Screen.IssueDetails.createRoute(issueId))
                 },
                 onLogout = {
                     authViewModel.logout()
@@ -115,53 +115,27 @@ fun CampusCareApp() {
 
         composable(Screen.AdminHome.route) {
             AdminHomeScreen(
-                navController = navController,
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                onNavigateToChat = { issueId, issueTitle ->
-                    navController.navigate(
-                        Screen.Chat.createRoute(issueId, issueTitle)
-                    )
+                onNavigateToChat = { issueId ->
+                    navController.navigate("chat/$issueId")
                 },
                 authViewModel = authViewModel
             )
         }
 
-//        composable(Screen.ReportFault.route) {
-//            val authState = authViewModel.authState.collectAsState().value
-//            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
-//            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
-//            ReportFaultScreen(
-//                onNavigateBack = { navController.popBackStack() },
-//                userId = userId,
-//                userName = userName
-//            )
-//        }
-
-        composable(
-            route = Screen.ReportFault.route,
-            arguments = listOf(
-                navArgument("category") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
-        ) { backStackEntry ->
+        composable(Screen.ReportFault.route) {
             val authState = authViewModel.authState.collectAsState().value
             val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
             val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
-            val category = backStackEntry.arguments?.getString("category")
-
             ReportFaultScreen(
                 onNavigateBack = { navController.popBackStack() },
                 userId = userId,
-                userName = userName,
-                initialCategory = category // Pass the category here
+                userName = userName
             )
         }
 
@@ -187,41 +161,35 @@ fun CampusCareApp() {
 
         composable(
             route = Screen.Chat.route,
-            arguments = listOf(
-                navArgument("issueId") { type = NavType.StringType },
-                navArgument("issueTitle") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("issueId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
-            val issueTitle = backStackEntry.arguments?.getString("issueTitle") ?: ""
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
+
             val authState = authViewModel.authState.collectAsState().value
-            val currentUserId = if (authState is AuthState.Authenticated) authState.user.userId else ""
-            val currentUserName = if (authState is AuthState.Authenticated) authState.user.name else ""
+            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
             val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
 
             ChatScreen(
                 issueId = issueId,
-                issueTitle = issueTitle,
-                currentUserId = currentUserId,
-                currentUserName = currentUserName,
-                isAdmin = isAdmin,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                currentUserId = userId,
+                currentUserName = userName,
+                isAdmin = isAdmin
             )
         }
 
         composable(
-            route = Screen.IssueDetail.route,
+            route = Screen.IssueDetails.route,
             arguments = listOf(navArgument("issueId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
-            val authState = authViewModel.authState.collectAsState().value
-            val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
-            IssueDetailScreen(
+            val issueId = backStackEntry.arguments?.getString("issueId") ?: return@composable
+
+            IssueDetailsScreen(
                 issueId = issueId,
-                isAdmin = isAdmin,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToChat = { id, title ->
-                    navController.navigate(Screen.Chat.createRoute(id, title))
+                onNavigateToChat = { id ->
+                    navController.navigate(Screen.Chat.createRoute(id))
                 }
             )
         }

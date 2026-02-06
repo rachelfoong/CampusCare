@@ -10,7 +10,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
-import androidx.core.graphics.scale
 
 class PhotoUploadHelper(
     private val context: Context,
@@ -29,20 +28,20 @@ class PhotoUploadHelper(
         return try {
             // Compress image before upload
             val compressedFile = compressImage(uri)
-
+            
             // Create unique filename
             val filename = "issue_photos/$userId/${UUID.randomUUID()}.jpg"
             val photoRef = storageRef.child(filename)
-
+            
             // Upload file
-            photoRef.putFile(Uri.fromFile(compressedFile)).await()
-
+            val uploadTask = photoRef.putFile(Uri.fromFile(compressedFile)).await()
+            
             // Get download URL
             val downloadUrl = photoRef.downloadUrl.await()
-
+            
             // Clean up temporary file
             compressedFile.delete()
-
+            
             Result.success(downloadUrl.toString())
         } catch (e: Exception) {
             Result.failure(e)
@@ -64,9 +63,8 @@ class PhotoUploadHelper(
         val ratio = maxWidth.toFloat() / bitmap.width
         val newHeight = (bitmap.height * ratio).toInt()
         
-        val resizedBitmap = bitmap.scale(maxWidth, newHeight)
-//        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
-
+        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
+        
         // Compress to JPEG
         val outputStream = ByteArrayOutputStream()
         resizedBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
