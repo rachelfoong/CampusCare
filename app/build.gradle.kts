@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services") // Add this for Firebase
 }
+//hello
 
 android {
     namespace = "com.university.campuscare"
