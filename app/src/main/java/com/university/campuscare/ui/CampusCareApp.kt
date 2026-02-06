@@ -111,6 +111,9 @@ fun CampusCareApp() {
                 onNavigateToChat = { issueId, issueTitle ->
                     navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
                 },
+                onNavigateToDirectChat = { adminId, adminName ->
+                    navController.navigate(Screen.DirectChat.createRoute(adminId, adminName))
+                },
                 onNavigateToIssueDetails = { issueId ->
                     navController.navigate(Screen.IssueDetail.createRoute(issueId))
                 },
@@ -226,6 +229,28 @@ fun CampusCareApp() {
                 currentUserId = currentUserId,
                 currentUserName = currentUserName,
                 isAdmin = isAdmin,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.DirectChat.route,
+            arguments = listOf(
+                navArgument("adminId") { type = NavType.StringType },
+                navArgument("adminName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val adminId = backStackEntry.arguments?.getString("adminId") ?: ""
+            val adminName = backStackEntry.arguments?.getString("adminName") ?: ""
+            val authState = authViewModel.authState.collectAsState().value
+            val currentUserId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+            val currentUserName = if (authState is AuthState.Authenticated) authState.user.name else ""
+
+            DirectChatScreen(
+                adminId = adminId,
+                adminName = adminName,
+                currentUserId = currentUserId,
+                currentUserName = currentUserName,
                 onNavigateBack = { navController.popBackStack() }
             )
         }

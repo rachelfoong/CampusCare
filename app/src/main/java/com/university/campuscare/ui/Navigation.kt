@@ -22,6 +22,11 @@ sealed class Screen(val route: String) {
             return "chat/$issueId?issueTitle=$issueTitle"
         }
     }
+    object DirectChat : Screen("direct_chat/{adminId}?adminName={adminName}") {
+        fun createRoute(adminId: String, adminName: String = "Admin"): String {
+            return "direct_chat/$adminId?adminName=$adminName"
+        }
+    }
     object IssueDetail : Screen("issue_detail/{issueId}") {
         fun createRoute(issueId: String) = "issue_detail/$issueId"
     }
