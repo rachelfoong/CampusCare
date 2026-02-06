@@ -1,12 +1,10 @@
 package com.university.campuscare.viewmodel
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import com.university.campuscare.data.local.UserPreference
 import com.university.campuscare.data.model.User
 import com.university.campuscare.data.repository.AuthRepository
@@ -16,7 +14,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
+
+enum class UserRole {
+    STUDENT, STAFF, ADMIN
+}
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -148,35 +149,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                         _authState.value = AuthState.Idle
                     }
                 }
-            }
-        }
-    }
-    
-    fun uploadProfilePicture(imageUri: Uri, onComplete: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            try {
-                val currentUser = firebaseAuth.currentUser ?: run {
-                    onComplete(false)
-                    return@launch
-                }
-                
-                val storage = FirebaseStorage.getInstance()
-                val storageRef = storage.reference
-                val profileImageRef = storageRef.child("profile_pictures/${currentUser.uid}.jpg")
-                
-                profileImageRef.putFile(imageUri).await()
-                val downloadUrl = profileImageRef.downloadUrl.await().toString()
-                
-                firestore.collection("users")
-                    .document(currentUser.uid)
-                    .update("profilePhotoUrl", downloadUrl)
-                    .await()
-                
-                checkLoginStatus()
-                onComplete(true)
-                
-            } catch (e: Exception) {
-                onComplete(false)
             }
         }
     }
