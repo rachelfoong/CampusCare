@@ -1,18 +1,27 @@
 package com.university.campuscare.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.university.campuscare.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,6 +36,23 @@ fun SettingsScreen(
     var soundEnabled by remember { mutableStateOf(true) }
     var vibrationEnabled by remember { mutableStateOf(true) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var isUploadingImage by remember { mutableStateOf(false) }
+    
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            isUploadingImage = true
+            authViewModel.uploadProfilePicture(it) { success ->
+                isUploadingImage = false
+                if (!success) {
+                    selectedImageUri = null
+                }
+            }
+        }
+    }
     
     val authState by authViewModel.authState.collectAsState()
     val userName = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
@@ -36,6 +62,11 @@ fun SettingsScreen(
     }
     val userEmail = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
         (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.email
+    } else {
+        ""
+    }
+    val profilePhotoUrl = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
+        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.profilePhotoUrl
     } else {
         ""
     }
@@ -78,14 +109,37 @@ fun SettingsScreen(
                             .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = Color(0xFFFF0000)
-                        )
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, Color(0xFFFF0000), CircleShape)
+                                .clickable { imagePickerLauncher.launch("image/*") },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isUploadingImage) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(32.dp),
+                                    color = Color(0xFFFF0000)
+                                )
+                            } else if (profilePhotoUrl.isNotEmpty() && profilePhotoUrl != "") {
+                                AsyncImage(
+                                    model = profilePhotoUrl,
+                                    contentDescription = "Profile Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    tint = Color(0xFFFF0000)
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.width(16.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = userName,
                                 fontSize = 20.sp,
@@ -95,6 +149,13 @@ fun SettingsScreen(
                                 text = userEmail,
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Tap photo to change",
+                                fontSize = 11.sp,
+                                color = Color(0xFFFF0000),
+                                fontWeight = FontWeight.Medium
                             )
                         }
                     }
