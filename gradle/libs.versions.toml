@@ -19,6 +19,8 @@ materialIconsExtended = "1.7.8"
 navigationCompose = "2.9.7"
 coil = "2.7.0"
 playServicesLocation = "21.3.0"
+playServicesMaps = "18.1.0"
+mapsCompose = "2.11.2"
 coroutines = "1.9.0"
 
 [libraries]
@@ -45,6 +47,8 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+google-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps"}
+maps-compose = { module = "com.google.maps.android:maps-compose", version.ref = "mapsCompose"}
 
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth" }
