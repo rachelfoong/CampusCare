@@ -17,11 +17,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.university.campuscare.viewmodel.AuthState
+import com.university.campuscare.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onNavigateToOnboarding: () -> Unit
+    authViewModel: AuthViewModel,
+    onNavigateToOnboarding: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    onNavigateToAdminHome: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim = animateFloatAsState(
@@ -29,11 +34,26 @@ fun SplashScreen(
         animationSpec = tween(durationMillis = 1000),
         label = "alpha"
     )
+    
+    val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(key1 = true) {
         startAnimation = true
+        authViewModel.checkLoginStatus()
         delay(2500)
-        onNavigateToOnboarding()
+    }
+    
+    LaunchedEffect(authState) {
+        if (authState is AuthState.Authenticated) {
+            val user = (authState as AuthState.Authenticated).user
+            when (user.role) {
+                "ADMIN" -> onNavigateToAdminHome()
+                else -> onNavigateToHome()
+            }
+        } else if (authState is AuthState.Idle || authState is AuthState.Error) {
+            delay(2500)
+            onNavigateToOnboarding()
+        }
     }
 
     Surface(

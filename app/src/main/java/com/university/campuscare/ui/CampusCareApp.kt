@@ -23,8 +23,19 @@ fun CampusCareApp() {
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
+                authViewModel = authViewModel,
                 onNavigateToOnboarding = {
                     navController.navigate(Screen.Onboarding.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToAdminHome = {
+                    navController.navigate(Screen.AdminHome.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
