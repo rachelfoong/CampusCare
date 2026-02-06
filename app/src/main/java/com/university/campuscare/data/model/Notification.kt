@@ -2,6 +2,7 @@ package com.university.campuscare.data.model
 
 data class Notification(
     val id: String = "",
+    val userId: String = "",
     val type: NotificationType = NotificationType.STATUS_UPDATE,
     val title: String = "",
     val message: String = "",
