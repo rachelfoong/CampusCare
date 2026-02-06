@@ -72,7 +72,7 @@ class ReportViewModel : ViewModel() {
     }
 
     // Create issue in Firebase
-    // TODO - store location lat/long
+
     fun submitReport(
         context: Context,
         title: String,
@@ -80,6 +80,9 @@ class ReportViewModel : ViewModel() {
         block: String,
         level: String,
         room: String,
+        address: String?,
+        latitude: Double?,
+        longitude: Double?,
         userId: String,
         userName: String
     ) {
@@ -120,7 +123,10 @@ class ReportViewModel : ViewModel() {
                     location = IssueLocation(
                         block = block,
                         level = level,
-                        room = room
+                        room = room,
+                        address = address,
+                        latitude = latitude,
+                        longitude = longitude
                     ),
                     status = IssueStatus.PENDING,
                     reportedBy = userId,
