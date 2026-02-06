@@ -30,10 +30,10 @@ sealed class BottomNavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToReportFault: () -> Unit,
+    onNavigateToReportFault: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
-    onNavigateToChat: (String) -> Unit,
+    onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel

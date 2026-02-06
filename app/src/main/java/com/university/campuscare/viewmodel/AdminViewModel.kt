@@ -18,6 +18,7 @@ import com.university.campuscare.data.repository.NotificationRepositoryImpl
 import com.university.campuscare.data.model.Notification
 import com.university.campuscare.data.model.NotificationType
 import kotlinx.coroutines.tasks.await
+import java.util.Calendar
 
 data class AdminStats(
     val total: Int = 0,
@@ -25,10 +26,14 @@ data class AdminStats(
     val active: Int = 0,
     val resolved: Int = 0
 )
-// TODO FOR ADMIN FUNCTIONS:
-// Tap on an issue to go to a detailed view screen
-// Access the corresponding chat from the issue
-// Admin dashboard analytics tab
+
+data class AnalyticsData(
+    val totalReportsThisMonth: Int = 0,
+    val averageResolutionTime: String = "0 days",
+    val mostReportedIssue: String = "None",
+    val categoryBreakdown: Map<String, Int> = emptyMap()
+)
+
 class AdminViewModel : ViewModel() {
 
     private val _allIssues = MutableStateFlow<List<Issue>>(emptyList())
@@ -43,7 +48,9 @@ class AdminViewModel : ViewModel() {
 
     private val _stats = MutableStateFlow(AdminStats())
     val stats: StateFlow<AdminStats> = _stats.asStateFlow()
-    
+
+    private val _analyticsData = MutableStateFlow(AnalyticsData())
+    val analyticsData: StateFlow<AnalyticsData> = _analyticsData.asStateFlow()
     private val _selectedFilter = MutableStateFlow<IssueStatus?>(null)
     val selectedFilter: StateFlow<IssueStatus?> = _selectedFilter.asStateFlow()
 
@@ -55,10 +62,19 @@ class AdminViewModel : ViewModel() {
     
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    // Staff list for assignment
+    private val _staffList = MutableStateFlow<List<User>>(emptyList())
+    val staffList: StateFlow<List<User>> = _staffList.asStateFlow()
+
+    // Loading state for staff
+    private val _isLoadingStaff = MutableStateFlow(false)
+    val isLoadingStaff: StateFlow<Boolean> = _isLoadingStaff.asStateFlow()
     
     init {
         loadAllIssues()
         loadAllUsers()
+        loadStaffMembers()
     }
 
     // Get all issues to display to the admin
@@ -97,6 +113,31 @@ class AdminViewModel : ViewModel() {
         }
     }
 
+    // Load staff members for assignment
+    fun loadStaffMembers() {
+        viewModelScope.launch {
+            try {
+                _isLoadingStaff.value = true
+                val snapshot = firestore.collection("users")
+                    .whereEqualTo("role", "STAFF")
+                    .get()
+                    .await()
+
+                val staff = snapshot.documents.mapNotNull { doc ->
+                    doc.toObject(User::class.java)?.copy(userId = doc.id)
+                }
+
+                _staffList.value = staff
+                Log.d("AdminViewModel", "Loaded ${staff.size} staff members")
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error loading staff: ${e.message}")
+                _staffList.value = emptyList()
+            } finally {
+                _isLoadingStaff.value = false
+            }
+        }
+    }
+
     // Admin dashboard stats
     private fun updateStats() {
         val issues = _allIssues.value
@@ -106,6 +147,70 @@ class AdminViewModel : ViewModel() {
             active = issues.count { it.status == IssueStatus.IN_PROGRESS },
             resolved = issues.count { it.status == IssueStatus.RESOLVED }
         )
+
+        // Calculate analytics whenever stats are updated
+        calculateAnalytics()  // ← ADD THIS LINE
+    }
+
+    fun calculateAnalytics() {
+        viewModelScope.launch {
+            try {
+                val issues = _allIssues.value
+
+                // 1. Total Reports This Month
+                val calendar = Calendar.getInstance()
+                val currentMonth = calendar.get(Calendar.MONTH)
+                val currentYear = calendar.get(Calendar.YEAR)
+
+                val thisMonthIssues = issues.filter { issue ->
+                    val issueCalendar = Calendar.getInstance().apply {
+                        timeInMillis = issue.createdAt
+                    }
+                    issueCalendar.get(Calendar.MONTH) == currentMonth &&
+                            issueCalendar.get(Calendar.YEAR) == currentYear
+                }
+
+                // 2. Average Resolution Time
+                val resolvedIssues = issues.filter { it.status == IssueStatus.RESOLVED }
+                val averageResolutionTimeMillis = if (resolvedIssues.isNotEmpty()) {
+                    resolvedIssues.map { it.updatedAt - it.createdAt }.average()
+                } else {
+                    0.0
+                }
+                val averageResolutionDays = (averageResolutionTimeMillis / (1000 * 60 * 60 * 24)).toInt()
+                val averageResolutionTimeStr = if (averageResolutionDays > 0) {
+                    "$averageResolutionDays ${if (averageResolutionDays == 1) "day" else "days"}"
+                } else {
+                    "< 1 day"
+                }
+
+                // 4. Most Reported Issue Category
+                val categoryCount = issues.groupBy { it.category }
+                    .mapValues { it.value.size }
+                val mostReportedCategory = categoryCount.maxByOrNull { it.value }?.key ?: "None"
+
+                // 5. Category Breakdown with Percentages
+                val total = issues.size
+                val categoryBreakdown = if (total > 0) {
+                    categoryCount.mapValues { (it.value * 100) / total }
+                } else {
+                    emptyMap()
+                }
+
+                // Update analytics data
+                _analyticsData.value = AnalyticsData(
+                    totalReportsThisMonth = thisMonthIssues.size,
+                    averageResolutionTime = averageResolutionTimeStr,
+                    mostReportedIssue = mostReportedCategory,
+                    categoryBreakdown = categoryBreakdown
+                )
+
+                Log.d("AdminViewModel", "Analytics calculated: ${_analyticsData.value}")
+
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error calculating analytics: ${e.message}")
+            }
+        }
     }
     
     fun setFilter(status: IssueStatus?) {
@@ -174,6 +279,82 @@ class AdminViewModel : ViewModel() {
         val resolvedMessageTemplate = "Your issue \"%s\" has been resolved."
         val resolvedNotificationTitle = "Issue resolved"
         updateIssueStatus(issueId, NotificationType.ISSUE_RESOLVED, IssueStatus.RESOLVED, resolvedNotificationTitle, resolvedMessageTemplate)
+    }
+
+    fun deleteIssue(issueId: String) {
+        viewModelScope.launch {
+            try {
+                // Step 1: Delete from Firebase FIRST
+                firestore.collection("reports")
+                    .document(issueId)
+                    .delete()
+                    .await()
+
+                // Step 2: Only remove from local list if Firebase deletion succeeds
+                _allIssues.value = _allIssues.value.filter { it.id != issueId }
+
+                // Step 3: Update stats
+                updateStats()
+
+                Log.d("AdminViewModel", "Issue $issueId deleted from Firebase")
+
+            } catch (e: Exception) {
+                // If Firebase fails, DON'T remove from list
+                Log.e("AdminViewModel", "Delete failed: ${e.message}")
+            }
+        }
+    }
+
+    // Assign issue to staff member
+    fun assignIssueToStaff(issueId: String, staffUserId: String, staffName: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                val docRef = firestore.collection("reports").document(issueId)
+
+                // Update both assignedTo and status to IN_PROGRESS
+                docRef.update(
+                    mapOf(
+                        "assignedTo" to staffUserId,
+                        "assignedToName" to staffName,  // ← ADD THIS LINE
+                        "status" to IssueStatus.IN_PROGRESS.name,
+                        "updatedAt" to System.currentTimeMillis()
+                    )
+                ).await()
+
+                // Get the issue to send notifications
+                val snapshot = docRef.get().await()
+                val issue = snapshot.toObject(Issue::class.java)
+
+                if (issue != null) {
+                    // Notify the reporter
+                    val reporterMessage = "Your issue \"${issue.title}\" has been assigned to $staffName."
+                    createNotification(
+                        "Issue Assigned",
+                        NotificationType.STATUS_UPDATE,
+                        reporterMessage,
+                        issueId,
+                        issue.reportedBy
+                    )
+
+                    // Notify the assigned staff member
+                    val staffMessage = "You have been assigned to handle issue \"${issue.title}\"."
+                    createNotification(
+                        "New Assignment",
+                        NotificationType.STATUS_UPDATE,
+                        staffMessage,
+                        issueId,
+                        staffUserId
+                    )
+
+                    Log.d("AdminViewModel", "Issue $issueId assigned to $staffName")
+                }
+            } catch (e: Exception) {
+                Log.e("AdminViewModel", "Error assigning issue: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun getFilteredIssues(): List<Issue> {

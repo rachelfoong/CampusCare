@@ -10,6 +10,7 @@ data class Issue(
     val reportedBy: String = "",
     val reporterName: String = "",
     val assignedTo: String? = null,
+    val assignedToName: String? = null,
     val photoUrl: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
@@ -19,7 +20,6 @@ data class IssueLocation(
     val block: String = "",
     val level: String = "",
     val room: String = "",
-    val address: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null
 )
