@@ -1,8 +1,6 @@
 package com.university.campuscare.viewmodel
 
-import android.content.Context
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,7 +10,6 @@ import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
-import com.university.campuscare.utils.PhotoUploadHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -50,23 +47,7 @@ class ReportViewModel : ViewModel() {
         _selectedCategory.value = category
     }
 
-    // handle the string input from Navigation
-    fun setInitialCategory(categoryName: String?) {
-        if (categoryName.isNullOrBlank()) return
-
-        try {
-            // Convert string (e.g., "LIFT") to Enum (IssueCategory.LIFT)
-            val category = IssueCategory.valueOf(categoryName.uppercase())
-            // Only set if none is currently selected (to prevent overwriting user choice on rotate)
-            if (_selectedCategory.value == null) {
-                _selectedCategory.value = category
-            }
-        } catch (e: IllegalArgumentException) {
-            Log.e("ReportViewModel", "Invalid category passed: $categoryName")
-        }
-    }
-
-    // firebase storage uri to the actual photo
+    // firebase storage uri to the actual photo - upload function TODO
     fun setPhotoUri(uri: String?) {
         _photoUri.value = uri
     }
@@ -74,12 +55,14 @@ class ReportViewModel : ViewModel() {
     // Create issue in Firebase
     // TODO - store location lat/long
     fun submitReport(
-        context: Context,
         title: String,
         description: String,
         block: String,
         level: String,
         room: String,
+        address: String?,
+        latitude: Double?,
+        longitude: Double?,
         userId: String,
         userName: String
     ) {
@@ -94,24 +77,6 @@ class ReportViewModel : ViewModel() {
                     _reportState.value = ReportState.Error("Please provide a brief description")
                     return@launch
                 }
-
-                _reportState.value = ReportState.Loading
-
-                // Upload photo if it exists
-                var remotePhotoUrl: String? = null
-                val localPhotoUri = _photoUri.value
-
-                if (localPhotoUri != null) {
-                    val uploadHelper = PhotoUploadHelper(context)
-                    val result = uploadHelper.uploadPhoto(localPhotoUri.toUri(), userId)
-
-                    if (result.isSuccess) {
-                        remotePhotoUrl = result.getOrNull()
-                    } else {
-                        _reportState.value = ReportState.Error(result.exceptionOrNull()?.message ?: "Failed to upload photo")
-                        return@launch
-                    }
-                }
                 
                 val issue = Issue(
                     category = _selectedCategory.value!!.name,
@@ -120,17 +85,22 @@ class ReportViewModel : ViewModel() {
                     location = IssueLocation(
                         block = block,
                         level = level,
-                        room = room
+                        room = room,
+                        address = address,
+                        latitude = latitude,
+                        longitude = longitude
                     ),
                     status = IssueStatus.PENDING,
                     reportedBy = userId,
                     reporterName = userName,
-                    photoUrl = remotePhotoUrl
+                    photoUrl = _photoUri.value
                 )
 
                 issuesRepository.submitIssue(issue).collect { result ->
                     when(result) {
-                        is DataResult.Loading -> { /* already loading */ }
+                        is DataResult.Loading -> {
+                            _reportState.value = ReportState.Loading
+                        }
                         is DataResult.Success -> {
                             _reportState.value = ReportState.Success
                             // Reset form
@@ -138,7 +108,7 @@ class ReportViewModel : ViewModel() {
                             _photoUri.value = null
                         }
                         is DataResult.Error -> {
-                            _reportState.value = ReportState.Error(result.error.peekContent())
+                            _reportState.value = ReportState.Error(result.error.peekContent() ?: "Failed to submit report")
                         }
                         is DataResult.Idle -> {
                             _reportState.value = ReportState.Idle

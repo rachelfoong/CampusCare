@@ -15,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.viewmodel.AuthViewModel
@@ -37,9 +36,8 @@ sealed class AdminBottomNavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminHomeScreen(
-    navController: NavController,
     onLogout: () -> Unit,
-    onNavigateToChat: (String, String) -> Unit = { _, _ -> },
+    onNavigateToChat: (String) -> Unit,
     authViewModel: AuthViewModel,
     viewModel: AdminViewModel = viewModel(),
 ) {
@@ -118,9 +116,9 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(navController, onNavigateToChat, viewModel)
+                0 -> AdminDashboardScreen(onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
-                2 -> AdminAnalyticsTab(viewModel)
+                2 -> AdminAnalyticsTab()
                 3 -> AdminUsersTab(viewModel)
                 4 -> AdminSettingsTab(userName, onLogout)
             }
@@ -217,9 +215,7 @@ fun AdminReportsTab(viewModel: AdminViewModel) {
 }
 
 @Composable
-fun AdminAnalyticsTab(viewModel: AdminViewModel) {
-    val analyticsData by viewModel.analyticsData.collectAsState()
-
+fun AdminAnalyticsTab() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -232,7 +228,6 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Report Statistics Card
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -245,16 +240,16 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-
-                AnalyticsRow("Total Reports This Month", analyticsData.totalReportsThisMonth.toString())
-                AnalyticsRow("Average Resolution Time", analyticsData.averageResolutionTime)
-                AnalyticsRow("Most Reported Issue", analyticsData.mostReportedIssue)
+                
+                AnalyticsRow("Total Reports This Month", "45")
+                AnalyticsRow("Average Resolution Time", "2.5 days")
+                AnalyticsRow("User Satisfaction", "4.2/5.0")
+                AnalyticsRow("Most Reported Issue", "Electrical")
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Category Breakdown Card
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -267,27 +262,11 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
                     fontSize = 16.sp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
-
-                if (analyticsData.categoryBreakdown.isEmpty()) {
-                    Text(
-                        text = "No data available",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                } else {
-                    val categories = analyticsData.categoryBreakdown.entries.sortedByDescending { it.value }
-                    val colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.tertiary,
-                        MaterialTheme.colorScheme.error
-                    )
-
-                    categories.forEachIndexed { index, (category, percentage) ->
-                        val color = colors.getOrElse(index) { MaterialTheme.colorScheme.primary }
-                        CategoryBar(category, percentage, color)
-                    }
-                }
+                
+                CategoryBar("Electrical", 35, MaterialTheme.colorScheme.primary)
+                CategoryBar("Plumbing", 25, MaterialTheme.colorScheme.secondary)
+                CategoryBar("Furniture", 20, MaterialTheme.colorScheme.tertiary)
+                CategoryBar("Other", 20, MaterialTheme.colorScheme.error)
             }
         }
     }
