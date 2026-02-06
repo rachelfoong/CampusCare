@@ -22,9 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.university.campuscare.data.model.Message
+import com.university.campuscare.viewmodel.AuthState
+import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.automirrored.filled.Chat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +50,7 @@ fun ChatScreen(
         viewModel.loadMessages(issueId)
     }
     
+    // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
@@ -92,6 +96,7 @@ fun ChatScreen(
                 color = Color.White
             ) {
                 Column {
+                    // Error message
                     if (error != null) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
@@ -117,6 +122,7 @@ fun ChatScreen(
                         }
                     }
                     
+                    // Message input
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -180,6 +186,7 @@ fun ChatScreen(
         ) {
             when {
                 isLoading && messages.isEmpty() -> {
+                    // Loading state
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -200,6 +207,7 @@ fun ChatScreen(
                     }
                 }
                 messages.isEmpty() -> {
+                    // Empty state
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -229,6 +237,7 @@ fun ChatScreen(
                     }
                 }
                 else -> {
+                    // Messages list
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -257,6 +266,7 @@ private fun MessageBubble(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start
     ) {
+        // Sender name (only for other users' messages)
         if (!isCurrentUser) {
             Row(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -285,6 +295,7 @@ private fun MessageBubble(
             }
         }
         
+        // Message bubble
         Surface(
             color = if (isCurrentUser) Color(0xFFFF0000) else Color.White,
             shape = RoundedCornerShape(
@@ -321,6 +332,20 @@ private fun MessageBubble(
 }
 
 private fun formatTimestamp(timestamp: Long): String {
-    val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+
+    return when {
+        diff < 60 * 1000 -> "Just now"
+        diff < 60 * 60 * 1000 -> {
+            val minutes = diff / (60 * 1000)
+            "$minutes ${if (minutes == 1L) "min" else "mins"} ago"
+        }
+        diff < 24 * 60 * 60 * 1000 -> {
+            SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(timestamp))
+        }
+        else -> {
+            SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
 }

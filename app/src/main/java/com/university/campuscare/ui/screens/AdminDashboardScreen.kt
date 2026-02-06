@@ -17,20 +17,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.ui.components.StatusChip
 import com.university.campuscare.viewmodel.AdminViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.automirrored.filled.Chat
+import com.university.campuscare.ui.components.AssignStaffDialog
+import androidx.navigation.NavController
+import com.university.campuscare.ui.Screen
 
 @Composable
 fun AdminDashboardScreen(
+    navController: NavController,
+    onNavigateToChat: (String, String) -> Unit = { _, _ -> },
     viewModel: AdminViewModel = viewModel()
 ) {
     val stats by viewModel.stats.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val filteredIssues = viewModel.getFilteredIssues()
+
+    var showFilterMenu by remember { mutableStateOf(false) }
+
+    // Assign dialog state
+    var showAssignDialog by remember { mutableStateOf(false) }
+    var issueToAssign by remember { mutableStateOf<com.university.campuscare.data.model.Issue?>(null) }
+    val staffList by viewModel.staffList.collectAsState()
+    val isLoadingStaff by viewModel.isLoadingStaff.collectAsState()
     
     Column(
         modifier = Modifier.fillMaxSize()
@@ -54,7 +70,7 @@ fun AdminDashboardScreen(
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     AdminStatCard(
                         value = stats.total.toString(),
@@ -106,12 +122,49 @@ fun AdminDashboardScreen(
                         focusedContainerColor = Color(0xFFF5F5F5)
                     )
                 )
-                IconButton(onClick = { /* TODO: Show filter options */ }) {
-                    Icon(
-                        Icons.Default.FilterList,
-                        contentDescription = "Filter",
-                        tint = Color(0xFFFF0000)
-                    )
+                Box {
+                    IconButton(onClick = { showFilterMenu = true }) {
+                        Icon(
+                            Icons.Default.FilterList,
+                            contentDescription = "Filter",
+                            tint = if (selectedCategory != null) Color(0xFFD32F2F) else Color(0xFFFF0000)
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showFilterMenu,
+                        onDismissRequest = { showFilterMenu = false }
+                    ) {
+                        Text(
+                            "Filter by Category",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                        DropdownMenuItem(
+                            text = { Text("All Categories") },
+                            onClick = {
+                                viewModel.setCategoryFilter(null)
+                                showFilterMenu = false
+                            },
+                            leadingIcon = {
+                                if (selectedCategory == null) Icon(Icons.Default.Check, contentDescription = null)
+                            }
+                        )
+                        //IssueCategory.values().forEach { category ->
+                        IssueCategory.entries.forEach { category ->
+                            DropdownMenuItem(
+                                text = { Text(category.name.lowercase().replaceFirstChar { it.uppercase() }) },
+                                onClick = {
+                                    viewModel.setCategoryFilter(category)
+                                    showFilterMenu = false
+                                },
+                                leadingIcon = {
+                                    if (selectedCategory == category) Icon(Icons.Default.Check, contentDescription = null)
+                                }
+                            )
+                        }
+                    }
                 }
             }
             
@@ -143,6 +196,24 @@ fun AdminDashboardScreen(
                     onClick = { viewModel.setFilter(IssueStatus.RESOLVED) }
                 )
             }
+
+            if (selectedCategory != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Category: ${selectedCategory?.name}",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    IconButton(
+                        onClick = { viewModel.setCategoryFilter(null) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear Category", modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -173,11 +244,32 @@ fun AdminDashboardScreen(
                         AdminIssueCard(
                             issue = issue,
                             onAccept = { viewModel.acceptIssue(issue.id) },
-                            onAssign = { viewModel.assignIssue(issue.id, "") }
+                            onAssign = { issueToAssign = issue
+                                showAssignDialog = true },
+                            onOpenChat = { onNavigateToChat(issue.id, issue.title) },
+                            onMarkResolved = { viewModel.resolveIssue(issue.id) },
+                            onDelete = { viewModel.deleteIssue(issue.id) },
+                            onClick = { navController.navigate(Screen.IssueDetail.createRoute(issue.id))}
                         )
                     }
                 }
             }
+        }
+        // Assign Staff Dialog
+        if (showAssignDialog && issueToAssign != null) {
+            AssignStaffDialog(
+                staffList = staffList,
+                isLoading = isLoadingStaff,
+                onDismiss = { showAssignDialog = false },
+                onAssignStaff = { selectedStaff ->
+                    viewModel.assignIssueToStaff(
+                        issueId = issueToAssign!!.id,
+                        staffUserId = selectedStaff.userId,
+                        staffName = selectedStaff.name
+                    )
+                    showAssignDialog = false
+                }
+            )
         }
     }
 }
@@ -217,37 +309,19 @@ private fun AdminStatCard(
 }
 
 @Composable
-private fun AdminFilterChip(
-    text: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    FilterChip(
-        selected = isSelected,
-        onClick = onClick,
-        label = { Text(text) },
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = Color(0xFFFFEBEB),
-            selectedLabelColor = Color(0xFFFF0000),
-            containerColor = Color.White,
-            labelColor = Color.Gray
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            borderColor = if (isSelected) Color(0xFFFF0000) else Color.LightGray,
-            selectedBorderColor = Color(0xFFFF0000),
-            enabled = true,
-            selected = isSelected
-        )
-    )
-}
-
-@Composable
 private fun AdminIssueCard(
     issue: com.university.campuscare.data.model.Issue,
     onAccept: () -> Unit,
-    onAssign: () -> Unit
+    onAssign: () -> Unit,
+    onOpenChat: () -> Unit,
+    onMarkResolved: () -> Unit,
+    onDelete: () -> Unit,
+    onClick: () -> Unit = {}
 ) {
+    var showOptions by remember { mutableStateOf(false) }
+
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -268,22 +342,30 @@ private fun AdminIssueCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "#${issue.id} • Reported by ${issue.reporterName}",
+                        text = "Reported by ${issue.reporterName}",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
                 }
-                IconButton(onClick = { /* TODO: Show options */ }) {
-                    Icon(
-                        Icons.Default.MoreVert,
-                        contentDescription = "Options",
-                        tint = Color.Gray
-                    )
+                Box {
+                    IconButton(onClick = { showOptions = true }) {
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription = "Options",
+                            tint = Color.Gray
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showOptions,
+                        onDismissRequest = { showOptions = false }
+                    ) {
+                    // Add things in dropdownmenu if needed
+                    }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -299,9 +381,9 @@ private fun AdminIssueCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -318,31 +400,133 @@ private fun AdminIssueCard(
                     color = Color.Gray
                 )
             }
-            
-            if (issue.status == IssueStatus.PENDING) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = onAccept,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF0000)
-                        )
-                    ) {
-                        Text("Accept")
+
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Action Buttons Section - Differentiated by Status
+                when (issue.status) {
+                    IssueStatus.PENDING -> {
+                        // For PENDING issues: Show Accept and Assign buttons
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = onAccept,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFF0000)
+                                )
+                            ) {
+                                Text("Accept")
+                            }
+                            OutlinedButton(
+                                onClick = onAssign,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFFF0000)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    Color(0xFFFF0000)
+                                )
+                            ) {
+                                Text("Assign")
+                            }
+                        }
                     }
-                    OutlinedButton(
-                        onClick = onAssign,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFFF0000)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
-                    ) {
-                        Text("Assign")
+
+                    IssueStatus.IN_PROGRESS -> {
+                        // For IN_PROGRESS issues: Show "Go to Issue Chat" and "Mark as Resolved" buttons
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = onOpenChat,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFFF0000)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    Color(0xFFFF0000)
+                                )
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Chat,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Open Chat", fontSize = 13.sp)
+                            }
+                            Button(
+                                onClick = onMarkResolved,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4CAF50)
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Resolved", fontSize = 13.sp)
+                            }
+                        }
+                    }
+
+                    IssueStatus.RESOLVED -> {
+                        // For IN_PROGRESS issues: Show "Go to Issue Chat" and "Mark as Resolved" buttons
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = onOpenChat,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFFFF0000)
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.dp,
+                                    Color(0xFFFF0000)
+                                )
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Chat,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Open Chat", fontSize = 13.sp)
+                            }
+                            Button(
+                                onClick = onDelete,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFF4CAF50)
+                                )
+                            ) {
+                                Icon(
+                                    Icons.Default.Delete,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Delete", fontSize = 13.sp)
+                            }
+                        }
                     }
                 }
             }

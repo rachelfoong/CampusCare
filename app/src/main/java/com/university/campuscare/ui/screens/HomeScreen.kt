@@ -6,6 +6,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -29,13 +30,15 @@ sealed class BottomNavItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToReportFault: () -> Unit,
+    onNavigateToReportFault: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
+    onNavigateToChat: (String, String) -> Unit,
+    onNavigateToIssueDetails: (String) -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
 ) {
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     
     val bottomNavItems = listOf(
         BottomNavItem.Home,
@@ -50,6 +53,12 @@ fun HomeScreen(
     } else {
         "User"
     }
+    val userId = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
+        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.userId
+    } else {
+        ""
+    }
+
 
     Scaffold(
         bottomBar = {
@@ -78,9 +87,9 @@ fun HomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> HomeTab(userName, onNavigateToReportFault)
-                1 -> IssuesTab()
-                2 -> AlertsTab()
+                0 -> HomeTab(userName, userId, onNavigateToReportFault)
+                1 -> IssuesTab(userId, onNavigateToChat, onNavigateToIssueDetails)
+                2 -> AlertsTab(userId)
                 3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport)
             }
         }

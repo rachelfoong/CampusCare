@@ -76,8 +76,9 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String) {
+fun IssueCard(title: String, status: String, date: String, location: String, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
@@ -113,15 +114,30 @@ fun IssueCard(title: String, status: String, date: String, location: String) {
                     color = Color.Gray
                 )
             }
+
+            if (onChatClick != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onChatClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF0000)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
+                ) {
+                    Text("Chat")
+                }
+            }
         }
+
     }
 }
 
 @Composable
 fun StatusChip(status: String) {
     val (backgroundColor, textColor) = when (status) {
-        "Resolved" -> Color(0xFF4CAF50) to Color.White
-        "In Progress" -> Color(0xFFFFA726) to Color.White
+        "RESOLVED" -> Color(0xFF4CAF50) to Color.White
+        "IN_PROGRESS" -> Color(0xFFFFA726) to Color.White
         else -> Color(0xFFE0E0E0) to Color.Black
     }
     
@@ -130,7 +146,7 @@ fun StatusChip(status: String) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = status,
+            text = if (status == "IN_PROGRESS") "IN PROGRESS" else status,
             color = textColor,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
