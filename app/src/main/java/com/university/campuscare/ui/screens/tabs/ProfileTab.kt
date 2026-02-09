@@ -69,9 +69,7 @@ fun ProfileTab(
         ProfileOption(
             icon = Icons.Default.Groups,
             title = "Facilities Team",
-            onClick = onNavigateToFacilitiesTeam
-pport",
-            onClick = onNavigateToHelpSupport
+            onClick = onNavigateToFacilitiesTeam,
         )
         
         Spacer(modifier = Modifier.weight(1f))
