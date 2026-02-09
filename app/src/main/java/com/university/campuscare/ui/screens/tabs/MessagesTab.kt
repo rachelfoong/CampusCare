@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +26,7 @@ import com.university.campuscare.viewmodel.DirectMessageViewModel
 fun MessagesTab(
     currentUserId: String,
     onNavigateToDirectChat: (String, String) -> Unit,
+    onNavigateToProfile: (String) -> Unit = {},
     viewModel: DirectMessageViewModel = viewModel()
 ) {
     val adminUsersState by viewModel.adminUsers.collectAsState()
@@ -100,8 +102,11 @@ fun MessagesTab(
                         items(adminUsers) { admin ->
                             AdminContactCard(
                                 admin = admin,
-                                onClick = {
+                                onMessageClick = {
                                     onNavigateToDirectChat(admin.userId, admin.name)
+                                },
+                                onProfileClick = {
+                                    onNavigateToProfile(admin.userId)
                                 }
                             )
                         }
@@ -116,12 +121,13 @@ fun MessagesTab(
 @Composable
 fun AdminContactCard(
     admin: User,
-    onClick: () -> Unit
+    onMessageClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(onClick = onMessageClick),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -189,13 +195,23 @@ fun AdminContactCard(
                 }
             }
             
-            // Message indicator
-            Icon(
-                imageVector = Icons.Default.AccountCircle,
-                contentDescription = "Send Message",
-                tint = Color(0xFFFF0000),
-                modifier = Modifier.size(24.dp)
-            )
+            // Action icons
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // View profile icon
+                IconButton(
+                    onClick = onProfileClick,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "View Profile",
+                        tint = Color(0xFF666666),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 }

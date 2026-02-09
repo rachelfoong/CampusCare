@@ -1,6 +1,7 @@
 package com.university.campuscare.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +32,7 @@ fun DirectChatScreen(
     currentUserId: String,
     currentUserName: String,
     onNavigateBack: () -> Unit,
+    onNavigateToProfile: (String) -> Unit = {},
     viewModel: DirectMessageViewModel = viewModel()
 ) {
     val messages by viewModel.messages.collectAsState()
@@ -58,14 +60,16 @@ fun DirectChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    Column(
+                        modifier = Modifier.clickable { onNavigateToProfile(adminId) }
+                    ) {
                         Text(
                             text = adminName,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Campus Admin",
+                            text = "Tap to view profile",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.8f)
                         )
