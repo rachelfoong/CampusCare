@@ -108,6 +108,12 @@ fun CampusCareApp() {
                 onNavigateToHelpSupport = {
                     navController.navigate(Screen.HelpSupport.route)
                 },
+                onNavigateToUserProfile = {
+                    navController.navigate(Screen.UserProfile.route)
+                },
+                onNavigateToProfile = { userId ->
+                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
+                },
                 onNavigateToChat = { issueId, issueTitle ->
                     navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
                 },
@@ -243,7 +249,10 @@ fun CampusCareApp() {
                 adminName = adminName,
                 currentUserId = currentUserId,
                 currentUserName = currentUserName,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToProfile = { userId ->
+                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
+                }
             )
         }
 
@@ -267,6 +276,29 @@ fun CampusCareApp() {
         composable(Screen.FacilitiesTeam.route) {
             FacilitiesTeamScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.ProfileSearch.route) {
+            ProfileSearchScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDetailedProfile = { userId ->
+                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.DetailedProfile.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            DetailedProfileScreen(
+                userId = userId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDirectChat = { adminId, adminName ->
+                    navController.navigate(Screen.DirectChat.createRoute(adminId, adminName))
+                }
             )
         }
     }

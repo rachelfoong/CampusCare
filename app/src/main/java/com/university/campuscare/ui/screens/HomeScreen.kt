@@ -35,6 +35,8 @@ fun HomeScreen(
     onNavigateToReportFault: (String?) -> Unit,
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
+    onNavigateToUserProfile: () -> Unit,
+    onNavigateToProfile: (String) -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     onNavigateToDirectChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
@@ -94,9 +96,9 @@ fun HomeScreen(
             when (selectedTab) {
                 0 -> HomeTab(userName, userId, onNavigateToReportFault)
                 1 -> IssuesTab(userId, onNavigateToChat, onNavigateToIssueDetails)
-                2 -> MessagesTab(userId, onNavigateToDirectChat)
+                2 -> MessagesTab(userId, onNavigateToDirectChat, onNavigateToProfile)
                 3 -> AlertsTab(userId)
-                4 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam)
+                4 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam, onNavigateToUserProfile)
             }
         }
     }

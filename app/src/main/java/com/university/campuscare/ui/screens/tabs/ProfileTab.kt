@@ -22,6 +22,7 @@ fun ProfileTab(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToHelpSupport: () -> Unit = {},
     onNavigateToFacilitiesTeam: () -> Unit = {},
+    onNavigateToUserProfile: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -53,7 +54,7 @@ fun ProfileTab(
         ProfileOption(
             icon = Icons.Default.Person,
             title = "Edit Profile",
-            onClick = { /* TODO */ }
+            onClick = onNavigateToUserProfile
         )
         ProfileOption(
             icon = Icons.Default.Settings,
@@ -69,6 +70,8 @@ fun ProfileTab(
             icon = Icons.Default.Groups,
             title = "Facilities Team",
             onClick = onNavigateToFacilitiesTeam
+pport",
+            onClick = onNavigateToHelpSupport
         )
         
         Spacer(modifier = Modifier.weight(1f))
