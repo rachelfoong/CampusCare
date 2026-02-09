@@ -117,6 +117,9 @@ fun CampusCareApp() {
                 onNavigateToIssueDetails = { issueId ->
                     navController.navigate(Screen.IssueDetail.createRoute(issueId))
                 },
+                onNavigateToFacilitiesTeam = {
+                    navController.navigate(Screen.FacilitiesTeam.route)
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate(Screen.Login.route) {
@@ -145,17 +148,6 @@ fun CampusCareApp() {
             )
         }
 
-//        composable(Screen.ReportFault.route) {
-//            val authState = authViewModel.authState.collectAsState().value
-//            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
-//            val userName = if (authState is AuthState.Authenticated) authState.user.name else ""
-//            ReportFaultScreen(
-//                onNavigateBack = { navController.popBackStack() },
-//                userId = userId,
-//                userName = userName
-//            )
-//        }
-
         composable(
             route = Screen.ReportFault.route,
             arguments = listOf(
@@ -175,7 +167,7 @@ fun CampusCareApp() {
                 onNavigateBack = { navController.popBackStack() },
                 userId = userId,
                 userName = userName,
-                initialCategory = category // Pass the category here
+                initialCategory = category
             )
         }
 
@@ -269,6 +261,12 @@ fun CampusCareApp() {
                 onNavigateToChat = { id, title ->
                     navController.navigate(Screen.Chat.createRoute(id, title))
                 }
+            )
+        }
+
+        composable(Screen.FacilitiesTeam.route) {
+            FacilitiesTeamScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

@@ -20,7 +20,8 @@ fun ProfileTab(
     userName: String,
     onLogout: () -> Unit,
     onNavigateToSettings: () -> Unit = {},
-    onNavigateToHelpSupport: () -> Unit = {}
+    onNavigateToHelpSupport: () -> Unit = {},
+    onNavigateToFacilitiesTeam: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier
@@ -63,6 +64,11 @@ fun ProfileTab(
             icon = Icons.Default.Info,
             title = "Help & Support",
             onClick = onNavigateToHelpSupport
+        )
+        ProfileOption(
+            icon = Icons.Default.Groups,
+            title = "Facilities Team",
+            onClick = onNavigateToFacilitiesTeam
         )
         
         Spacer(modifier = Modifier.weight(1f))
