@@ -31,6 +31,7 @@ sealed class AdminBottomNavItem(
     object AllReports : AdminBottomNavItem("Reports", Icons.Default.CheckCircle)
     object Analytics : AdminBottomNavItem("Analytics", Icons.Default.CheckCircle)
     object Users : AdminBottomNavItem("Users", Icons.Default.AccountCircle)
+    object StaffMgmt : AdminBottomNavItem("Staff", Icons.Default.Person)
     object Settings : AdminBottomNavItem("Settings", Icons.Default.Settings)
 }
 
@@ -51,6 +52,7 @@ fun AdminHomeScreen(
         AdminBottomNavItem.AllReports,
         AdminBottomNavItem.Analytics,
         AdminBottomNavItem.Users,
+        AdminBottomNavItem.StaffMgmt,
         AdminBottomNavItem.Settings
     )
 
@@ -122,7 +124,8 @@ fun AdminHomeScreen(
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)
-                4 -> AdminSettingsTab(userName, onLogout)
+                4 -> StaffManagementTab(authViewModel, viewModel)
+                5 -> AdminSettingsTab(userName, onLogout)
             }
         }
     }
