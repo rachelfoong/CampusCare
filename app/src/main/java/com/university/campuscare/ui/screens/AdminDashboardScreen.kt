@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.ui.components.StatusChip
+import com.university.campuscare.ui.components.UrgencyChip
 import com.university.campuscare.viewmodel.AdminViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -370,6 +371,7 @@ private fun AdminIssueCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatusChip(status = issue.status.name.replace("_", " "))
+                UrgencyChip(urgency = issue.urgency.name)
                 Surface(
                     color = Color(0xFFF5F5F5),
                     shape = RoundedCornerShape(12.dp)

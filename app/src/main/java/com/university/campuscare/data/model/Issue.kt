@@ -7,6 +7,7 @@ data class Issue(
     val description: String = "",
     val location: IssueLocation = IssueLocation(),
     val status: IssueStatus = IssueStatus.PENDING,
+    val urgency: IssueUrgency = IssueUrgency.MEDIUM,
     val reportedBy: String = "",
     val reporterName: String = "",
     val assignedTo: String? = null,
@@ -29,6 +30,13 @@ enum class IssueStatus {
     PENDING,
     IN_PROGRESS,
     RESOLVED
+}
+
+enum class IssueUrgency {
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL
 }
 
 enum class IssueCategory {

@@ -80,6 +80,7 @@ fun IssuesTab(
                             date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                                 .format(Date(issue.createdAt)),
                             location = issue.location.block,
+                            urgency = issue.urgency.name,
                             onClick = { onNavigateToIssueDetails(issue.id) },
                             onChatClick = if (issue.status == com.university.campuscare.data.model.IssueStatus.IN_PROGRESS) {
                                 { onNavigateToChat(issue.id, issue.title) }
