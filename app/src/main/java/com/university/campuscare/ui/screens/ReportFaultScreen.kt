@@ -32,6 +32,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.university.campuscare.data.model.IssueCategory
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
 import kotlinx.coroutines.launch
@@ -72,6 +73,7 @@ fun ReportFaultScreen(
     var confirmedAddress by remember { mutableStateOf<String?>(null) }
 
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedUrgency by viewModel.selectedUrgency.collectAsState()
     val reportState by viewModel.reportState.collectAsState()
     val photoUri by viewModel.photoUri.collectAsState()
 
@@ -269,6 +271,44 @@ fun ReportFaultScreen(
                             { viewModel.selectCategory(IssueCategory.OTHER) },
                             Modifier.fillMaxWidth(0.5f)
                         )
+                    }
+                    
+                    item {
+                        Text("Urgency Level", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            UrgencyButton(
+                                "Low",
+                                selectedUrgency == IssueUrgency.LOW,
+                                { viewModel.selectUrgency(IssueUrgency.LOW) },
+                                Color(0xFF4CAF50),
+                                Modifier.weight(1f)
+                            )
+                            UrgencyButton(
+                                "Medium",
+                                selectedUrgency == IssueUrgency.MEDIUM,
+                                { viewModel.selectUrgency(IssueUrgency.MEDIUM) },
+                                Color(0xFFFFA726),
+                                Modifier.weight(1f)
+                            )
+                            UrgencyButton(
+                                "High",
+                                selectedUrgency == IssueUrgency.HIGH,
+                                { viewModel.selectUrgency(IssueUrgency.HIGH) },
+                                Color(0xFFEF5350),
+                                Modifier.weight(1f)
+                            )
+                            UrgencyButton(
+                                "Critical",
+                                selectedUrgency == IssueUrgency.CRITICAL,
+                                { viewModel.selectUrgency(IssueUrgency.CRITICAL) },
+                                Color(0xFFD32F2F),
+                                Modifier.weight(1f)
+                            )
+                        }
                     }
 
                     item {
@@ -472,6 +512,28 @@ private fun CategoryButton(text: String, isSelected: Boolean, onClick: () -> Uni
         shape = RoundedCornerShape(8.dp)
     ) {
         Text(text)
+    }
+}
+
+@Composable
+private fun UrgencyButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isSelected) color.copy(alpha = 0.15f) else Color.White,
+            contentColor = if (isSelected) color else Color.Gray
+        ),
+        border = BorderStroke(1.5.dp, if (isSelected) color else Color.LightGray),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(text, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
     }
 }
 

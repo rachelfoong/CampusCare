@@ -76,7 +76,7 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
+fun IssueCard(title: String, status: String, date: String, location: String, urgency: String? = null, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -94,9 +94,15 @@ fun IssueCard(title: String, status: String, date: String, location: String, onC
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                StatusChip(status)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (urgency != null) {
+                        UrgencyChip(urgency)
+                    }
+                    StatusChip(status)
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -150,6 +156,30 @@ fun StatusChip(status: String) {
             color = textColor,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun UrgencyChip(urgency: String) {
+    val (backgroundColor, textColor) = when (urgency) {
+        "CRITICAL" -> Color(0xFFD32F2F) to Color.White
+        "HIGH" -> Color(0xFFEF5350) to Color.White
+        "MEDIUM" -> Color(0xFFFFA726) to Color.White
+        "LOW" -> Color(0xFF4CAF50) to Color.White
+        else -> Color(0xFFE0E0E0) to Color.Black
+    }
+    
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = urgency,
+            color = textColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
         )
     }
 }

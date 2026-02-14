@@ -10,6 +10,7 @@ import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
 import com.university.campuscare.utils.PhotoUploadHelper
@@ -40,6 +41,9 @@ class ReportViewModel : ViewModel() {
     private val _selectedCategory = MutableStateFlow<IssueCategory?>(null)
     val selectedCategory: StateFlow<IssueCategory?> = _selectedCategory.asStateFlow()
     
+    private val _selectedUrgency = MutableStateFlow<IssueUrgency>(IssueUrgency.MEDIUM)
+    val selectedUrgency: StateFlow<IssueUrgency> = _selectedUrgency.asStateFlow()
+    
     private val _photoUri = MutableStateFlow<String?>(null)
     val photoUri: StateFlow<String?> = _photoUri.asStateFlow()
 
@@ -48,6 +52,10 @@ class ReportViewModel : ViewModel() {
 
     fun selectCategory(category: IssueCategory) {
         _selectedCategory.value = category
+    }
+    
+    fun selectUrgency(urgency: IssueUrgency) {
+        _selectedUrgency.value = urgency
     }
 
     // handle the string input from Navigation
@@ -120,6 +128,7 @@ class ReportViewModel : ViewModel() {
                     category = _selectedCategory.value!!.name,
                     title = title,
                     description = description,
+                    urgency = _selectedUrgency.value,
                     location = IssueLocation(
                         block = block,
                         level = level,

@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.data.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,6 +57,9 @@ class AdminViewModel : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow<IssueCategory?>(null)
     val selectedCategory: StateFlow<IssueCategory?> = _selectedCategory.asStateFlow()
+    
+    private val _selectedUrgency = MutableStateFlow<IssueUrgency?>(null)
+    val selectedUrgency: StateFlow<IssueUrgency?> = _selectedUrgency.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -220,6 +224,10 @@ class AdminViewModel : ViewModel() {
     fun setCategoryFilter(category: IssueCategory?) {
         _selectedCategory.value = category
     }
+    
+    fun setUrgencyFilter(urgency: IssueUrgency?) {
+        _selectedUrgency.value = urgency
+    }
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -366,6 +374,10 @@ class AdminViewModel : ViewModel() {
 
         _selectedCategory.value?.let { category ->
             filtered = filtered.filter { it.category.equals(category.name, ignoreCase = true) }
+        }
+        
+        _selectedUrgency.value?.let { urgency ->
+            filtered = filtered.filter { it.urgency == urgency }
         }
 
         if (_searchQuery.value.isNotBlank()) {
