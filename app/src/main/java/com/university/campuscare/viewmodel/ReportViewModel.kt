@@ -21,11 +21,6 @@ import kotlinx.coroutines.launch
 
 // Used by ReportFaultScreen
 
-// TODO FOR REPORTS:
-// Take a photo from the UI (or select from device storage?)
-// Upload the photo to Firebase storage
-// Select location from a map in the UI
-
 sealed class ReportState {
     object Idle : ReportState()
     object Loading : ReportState()

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// TODO - UI for users to find profiles of staff
 class StaffViewModel : ViewModel() {
 
     private val staffRepository: StaffRepository = StaffRepositoryImpl(FirebaseFirestore.getInstance())

@@ -1,5 +1,6 @@
 package com.university.campuscare.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -185,30 +186,50 @@ fun UrgencyChip(urgency: String) {
 }
 
 @Composable
-fun AlertCard(title: String, message: String, time: String) {
+fun AlertCard(
+    title: String,
+    message: String,
+    time: String,
+    isRead: Boolean = true,
+    onTap: (() -> Unit)? = null
+) {
     Card(
+        onClick = { if (!isRead) onTap?.invoke() },
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isRead) Color.White else Color(0xFFFFF3F3)
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.Notifications,
-                contentDescription = null,
-                tint = Color(0xFFFF0000),
-                modifier = Modifier.size(40.dp)
-            )
+            Box {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = Color(0xFFFF0000),
+                    modifier = Modifier.size(40.dp)
+                )
+                if (!isRead) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .align(Alignment.TopEnd)
+                            .background(Color(0xFFFF0000), shape = RoundedCornerShape(50))
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = if (isRead) FontWeight.Normal else FontWeight.Bold
                 )
                 Text(
                     text = message,
@@ -219,6 +240,15 @@ fun AlertCard(title: String, message: String, time: String) {
                     text = time,
                     fontSize = 12.sp,
                     color = Color.LightGray
+                )
+            }
+            if (!isRead) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "NEW",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF0000)
                 )
             }
         }
