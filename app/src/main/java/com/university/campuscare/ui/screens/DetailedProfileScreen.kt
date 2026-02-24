@@ -211,7 +211,7 @@ fun DetailedProfileContent(
         Spacer(modifier = Modifier.height(32.dp))
 
         // Action buttons
-        if (user.role == "ADMIN") {
+        if (user.role == "ADMIN" || user.role == "STAFF") {
             Button(
                 onClick = { onNavigateToDirectChat(user.userId, user.name) },
                 modifier = Modifier
