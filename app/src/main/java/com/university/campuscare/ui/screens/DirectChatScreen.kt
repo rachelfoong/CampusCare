@@ -96,6 +96,11 @@ fun DirectChatScreen(
     // Load messages
     LaunchedEffect(conversationId) {
         viewModel.loadMessages(conversationId)
+        viewModel.startConversationInsights(
+            conversationId = conversationId,
+            currentUserId = currentUserId,
+            otherUserId = adminId
+        )
     }
 
     // Auto-scroll when new messages arrive

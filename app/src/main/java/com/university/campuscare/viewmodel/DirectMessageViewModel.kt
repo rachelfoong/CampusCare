@@ -8,16 +8,21 @@ import com.university.campuscare.data.model.User
 import com.university.campuscare.data.repository.DirectMessage
 import com.university.campuscare.data.repository.DirectMessageRepository
 import com.university.campuscare.data.repository.DirectMessageRepositoryImpl
+import com.university.campuscare.data.repository.InsightsRepository
+import com.university.campuscare.domain.ConversationInsightsCalculator
 import com.university.campuscare.utils.DataResult
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 
 class DirectMessageViewModel(application: Application) : AndroidViewModel(application) {
-    
-    private val repository: DirectMessageRepository = DirectMessageRepositoryImpl(
-        FirebaseFirestore.getInstance()
-    )
+
+    private val firestore = FirebaseFirestore.getInstance()
+
+    private val repository: DirectMessageRepository = DirectMessageRepositoryImpl(firestore)
+    private val insightsRepository = InsightsRepository(firestore)
 
     // Admin users list
     private val _adminUsers = MutableStateFlow<DataResult<List<User>>>(DataResult.Loading)
@@ -33,6 +38,9 @@ class DirectMessageViewModel(application: Application) : AndroidViewModel(applic
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error
 
+    private var messagesJob: Job? = null
+    private var insightsJob: Job? = null
+
     fun loadAdminUsers() {
         viewModelScope.launch {
             _adminUsers.value = DataResult.Loading
@@ -41,7 +49,9 @@ class DirectMessageViewModel(application: Application) : AndroidViewModel(applic
     }
 
     fun loadMessages(conversationId: String) {
-        viewModelScope.launch {
+        // Prevent duplicate collectors if screen re-enters
+        messagesJob?.cancel()
+        messagesJob = viewModelScope.launch {
             repository.getMessages(conversationId).collect { result ->
                 when (result) {
                     is DataResult.Loading -> {
@@ -59,8 +69,39 @@ class DirectMessageViewModel(application: Application) : AndroidViewModel(applic
                     else -> {}
                 }
             }
+        }
+    }
 
+    /**
+     * Background analytics only:
+     * - Computes conversation insights from current messages state
+     * - Writes to: conversation_insights/{conversationId}
+     * - Debounced to reduce Firestore writes
+     */
+    fun startConversationInsights(
+        conversationId: String,
+        currentUserId: String,
+        otherUserId: String
+    ) {
+        val (uidA, uidB) = listOf(currentUserId, otherUserId).sorted()
 
+        insightsJob?.cancel()
+        insightsJob = viewModelScope.launch {
+            messages
+                .debounce(1200)
+                .collect { list ->
+                    val computed = ConversationInsightsCalculator.compute(
+                        conversationId = conversationId,
+                        messages = list,
+                        uidA = uidA,
+                        uidB = uidB
+                    )
+                    try {
+                        insightsRepository.upsertInsights(computed)
+                    } catch (_: Exception) {
+                        // Do not break chat UX if analytics fails
+                    }
+                }
         }
     }
 
@@ -77,5 +118,11 @@ class DirectMessageViewModel(application: Application) : AndroidViewModel(applic
 
     fun clearError() {
         _error.value = null
+    }
+
+    override fun onCleared() {
+        messagesJob?.cancel()
+        insightsJob?.cancel()
+        super.onCleared()
     }
 }
