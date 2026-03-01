@@ -11,6 +11,8 @@ import com.university.campuscare.data.local.UserPreference
 import com.university.campuscare.data.model.User
 import com.university.campuscare.data.repository.AuthRepository
 import com.university.campuscare.data.repository.AuthRepositoryImpl
+import com.university.campuscare.data.repository.ClientProfileRepository
+import com.university.campuscare.utils.ClientProfileHelper
 import com.university.campuscare.utils.DataResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +54,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is DataResult.Success -> {
                         _authState.value = AuthState.Authenticated(result.data)
+                        viewModelScope.launch {
+                            try {
+                                val snapshot = ClientProfileHelper.collect(getApplication(), result.data.userId)
+                                ClientProfileRepository.pushSnapshot(snapshot)
+                            } catch (_: Exception) {}
+                        }
                     }
                     is DataResult.Error -> {
                         val errorMessage = result.error.getContentIfNotHandled()
@@ -79,6 +87,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is DataResult.Success -> {
                         _authState.value = AuthState.Authenticated(result.data)
+                        viewModelScope.launch {
+                            try {
+                                val snapshot = ClientProfileHelper.collect(getApplication(), result.data.userId)
+                                ClientProfileRepository.pushSnapshot(snapshot)
+                            } catch (_: Exception) {}
+                        }
                     }
                     is DataResult.Error -> {
                         val errorMessage = result.error.getContentIfNotHandled()
