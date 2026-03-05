@@ -31,6 +31,7 @@ import com.university.campuscare.ui.Screen
 @Composable
 fun AdminDashboardScreen(
     navController: NavController,
+    userName: String,
     onNavigateToChat: (String, String) -> Unit = { _, _ -> },
     viewModel: AdminViewModel = viewModel()
 ) {
@@ -65,6 +66,12 @@ fun AdminDashboardScreen(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
+                )
+
+                Text(
+                    text = "Welcome, $userName",
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
