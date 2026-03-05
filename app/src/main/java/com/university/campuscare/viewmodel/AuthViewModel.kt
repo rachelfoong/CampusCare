@@ -131,6 +131,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun logout() {
+        _authState.value = AuthState.Idle
+
         viewModelScope.launch {
             authRepository.logout().collect { result ->
                 when (result) {
