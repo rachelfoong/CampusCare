@@ -222,7 +222,6 @@ fun ReportFaultScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -294,6 +293,12 @@ fun ReportFaultScreen(
                                 Color(0xFFFFA726),
                                 Modifier.weight(1f)
                             )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             UrgencyButton(
                                 "High",
                                 selectedUrgency == IssueUrgency.HIGH,

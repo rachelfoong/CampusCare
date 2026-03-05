@@ -69,7 +69,7 @@ class NotificationRepositoryImpl(
         try {
             getNotificationsCollection(userId)
                 .document(notificationId)
-                .update("isRead", true)
+                .update("read", true)
                 .await()
             emit(DataResult.Success(Unit))
         } catch (e: Exception) {
@@ -83,14 +83,14 @@ class NotificationRepositoryImpl(
         emit(DataResult.Loading)
         try {
             val unreadNotifications = getNotificationsCollection(userId)
-                .whereEqualTo("isRead", false)
+                .whereEqualTo("read", false)
                 .get()
                 .await()
             
             if (!unreadNotifications.isEmpty) {
                 val batch = firestore.batch()
                 for (document in unreadNotifications.documents) {
-                    batch.update(document.reference, "isRead", true)
+                    batch.update(document.reference, "read", true)
                 }
                 batch.commit().await()
             }
