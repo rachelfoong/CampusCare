@@ -50,7 +50,8 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.material.icons.filled.PhotoLibrary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +106,16 @@ fun ReportFaultScreen(
         if (success && tempPhotoUri != null) {
             // save URI string to ViewModel
             viewModel.setPhotoUri(tempPhotoUri.toString())
+        }
+    }
+
+    // Photo Picker Launcher (Gallery)
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            // save URI string to ViewModel
+            viewModel.setPhotoUri(uri.toString())
         }
     }
 
@@ -403,11 +414,11 @@ fun ReportFaultScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             PhotoLocationCard(
                                 Icons.Default.CameraAlt,
-                                if (photoUri == null) "Take Photo" else "Retake Photo",
+                                "Camera",
                                 onClick = {
                                     if (ContextCompat.checkSelfPermission(
                                             context,
@@ -424,8 +435,18 @@ fun ReportFaultScreen(
                                 Modifier.weight(1f)
                             )
                             PhotoLocationCard(
+                                Icons.Default.PhotoLibrary,
+                                "Gallery",
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                Modifier.weight(1f)
+                            )
+                            PhotoLocationCard(
                                 Icons.Default.LocationOn,
-                                "Add Location",
+                                "Location",
                                 onClick = {
                                     // Check permission or request, then actively fetch and set `room`
                                     if (ContextCompat.checkSelfPermission(
