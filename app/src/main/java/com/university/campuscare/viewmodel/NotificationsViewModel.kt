@@ -62,7 +62,7 @@ class NotificationsViewModel : ViewModel() {
                 notificationRepository.markAsRead(userId, notificationId).collect { result ->
                     if (result is DataResult.Success) {
                         _notifications.value = _notifications.value.map {
-                            if (it.id == notificationId) it.copy(isRead = true) else it
+                            if (it.id == notificationId) it.copy(read = true) else it
                         }
                     } else if (result is DataResult.Error) {
                         Log.e("NotificationsViewModel", "Error marking notification as read: ${result.error.peekContent()}")
@@ -80,7 +80,7 @@ class NotificationsViewModel : ViewModel() {
             try {
                 notificationRepository.markAllAsReadForUser(userId).collect { result ->
                     if (result is DataResult.Success) {
-                        _notifications.value = _notifications.value.map { it.copy(isRead = true) }
+                        _notifications.value = _notifications.value.map { it.copy(read = true) }
                     } else if (result is DataResult.Error) {
                         Log.e("NotificationsViewModel", "Error marking all notifications as read: ${result.error.peekContent()}")
                     }
