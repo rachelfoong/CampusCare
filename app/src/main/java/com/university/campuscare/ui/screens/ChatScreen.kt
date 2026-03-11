@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.Message
 import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
@@ -42,8 +43,18 @@ fun ChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val issueStatus by viewModel.issueStatus.collectAsState()
     val messageText = remember { mutableStateOf("") }
     val listState = rememberLazyListState()
+
+    // office hours check (9AM–6PM) for students only
+    val calendar = Calendar.getInstance()
+    val hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
+    val isWithinOfficeHours = hourOfDay in 9..17
+
+    // resolved = read-only; students blocked outside hours
+    val isResolved = issueStatus == IssueStatus.RESOLVED
+    val canSend = !isResolved && (isAdmin || isWithinOfficeHours)
     
     LaunchedEffect(issueId) {
         viewModel.loadMessages(issueId)
@@ -120,57 +131,117 @@ fun ChatScreen(
                             }
                         }
                     }
-                    
-                    // Message input
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = messageText.value,
-                            onValueChange = { messageText.value = it },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Type a message...") },
-                            shape = RoundedCornerShape(24.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                unfocusedContainerColor = Color(0xFFF5F5F5),
-                                focusedContainerColor = Color(0xFFF5F5F5)
-                            ),
-                            maxLines = 4
-                        )
-                        
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        IconButton(
-                            onClick = {
-                                if (messageText.value.isNotBlank()) {
-                                    viewModel.sendMessage(
-                                        issueId = issueId,
-                                        senderId = currentUserId,
-                                        senderName = currentUserName,
-                                        text = messageText.value,
-                                        isAdmin = isAdmin
+
+                    when {
+                        // issue resolved — chat closed
+                        isResolved -> {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFFF5F5F5)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.Lock,
+                                        contentDescription = null,
+                                        tint = Color.Gray,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                    messageText.value = ""
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "This issue is resolved. Chat is now closed.",
+                                        fontSize = 13.sp,
+                                        color = Color.Gray
+                                    )
                                 }
-                            },
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(
-                                    color = if (messageText.value.isBlank()) 
-                                        Color.Gray 
-                                    else 
-                                        Color(0xFFFF0000),
-                                    shape = CircleShape
+                            }
+                        }
+                        // student outside office hours
+                        !isAdmin && !isWithinOfficeHours -> {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Color(0xFFFFF8E1)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        Icons.Default.AccessTime,
+                                        contentDescription = null,
+                                        tint = Color(0xFFF9A825),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Messaging is available during office hours (9AM – 6PM).",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFFF9A825)
+                                    )
+                                }
+                            }
+                        }
+                        // Normal input
+                        else -> {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedTextField(
+                                    value = messageText.value,
+                                    onValueChange = { messageText.value = it },
+                                    modifier = Modifier.weight(1f),
+                                    placeholder = { Text("Type a message...") },
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        unfocusedContainerColor = Color(0xFFF5F5F5),
+                                        focusedContainerColor = Color(0xFFF5F5F5)
+                                    ),
+                                    maxLines = 4
                                 )
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Send",
-                                tint = Color.White
-                            )
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                IconButton(
+                                    onClick = {
+                                        if (messageText.value.isNotBlank()) {
+                                            viewModel.sendMessage(
+                                                issueId = issueId,
+                                                senderId = currentUserId,
+                                                senderName = currentUserName,
+                                                text = messageText.value,
+                                                isAdmin = isAdmin
+                                            )
+                                            messageText.value = ""
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(
+                                            color = if (messageText.value.isBlank())
+                                                Color.Gray
+                                            else
+                                                Color(0xFFFF0000),
+                                            shape = CircleShape
+                                        )
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = "Send",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
                         }
                     }
                 }
