@@ -7,7 +7,7 @@ data class Message(
     val senderName: String = "",
     val message: String = "",
     val timestamp: Long = System.currentTimeMillis(),
-    val fromAdmin: Boolean = false
+    val isFromAdmin: Boolean = false
 )
 
 

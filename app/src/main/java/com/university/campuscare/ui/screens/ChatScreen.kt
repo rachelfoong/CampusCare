@@ -417,7 +417,7 @@ private fun MessageBubble(
                     fontWeight = FontWeight.Bold,
                     color = Color.Gray
                 )
-                if (message.fromAdmin) {
+                if (message.isFromAdmin) {
                     Spacer(modifier = Modifier.width(4.dp))
                     Surface(
                         color = Color(0xFFFF0000),

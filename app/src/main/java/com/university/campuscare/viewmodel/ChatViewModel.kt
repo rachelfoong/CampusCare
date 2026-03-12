@@ -160,7 +160,7 @@ class ChatViewModel : ViewModel() {
             senderId = senderId,
             senderName = senderName,
             message = text,
-            fromAdmin = isAdmin,
+            isFromAdmin = isAdmin,
             timestamp = System.currentTimeMillis()
         )
 
