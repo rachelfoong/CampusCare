@@ -1,5 +1,12 @@
 package com.university.campuscare.ui.screens
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,25 +16,32 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.Message
-import com.university.campuscare.viewmodel.AuthState
-import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.ChatViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import java.text.SimpleDateFormat
-import java.util.*
-import androidx.compose.material.icons.automirrored.filled.Chat
+import java.util.Date
+import java.util.Locale
+import kotlin.coroutines.resume
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +57,45 @@ fun ChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+
+    val messageText = remember { mutableStateOf("") }
+    val listState = rememberLazyListState()
+
+    // ---- Location sharing state (USER ONLY) ----
+    val context = LocalContext.current
+    val fusedClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val scope = rememberCoroutineScope()
+
+    var isRequestingLocation by remember { mutableStateOf(false) }
+    var locationToShare by remember { mutableStateOf<Location?>(null) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    val combinedError = error ?: localError
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            scope.launch {
+                localError = null
+                isRequestingLocation = true
+                val loc = fetchCurrentLocation(context, fusedClient)
+                isRequestingLocation = false
+
+                if (loc != null) {
+                    locationToShare = loc
+                    showConfirmDialog = true
+                } else {
+                    localError = "Unable to fetch location. Try again."
+                }
+            }
+        } else {
+            localError = "Location permission denied."
+        }
+    }
+    // ---- End location sharing state ----
+
     val issueStatus by viewModel.issueStatus.collectAsState()
     val messageText = remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -58,8 +111,9 @@ fun ChatScreen(
     
     LaunchedEffect(issueId) {
         viewModel.loadMessages(issueId)
+        viewModel.startIssueInsights(issueId)
     }
-    
+
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -106,8 +160,8 @@ fun ChatScreen(
                 color = Color.White
             ) {
                 Column {
-                    // Error message
-                    if (error != null) {
+                    // Error message (Firestore OR location)
+                    if (combinedError != null) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
                             color = Color(0xFFFFEBEE)
@@ -124,7 +178,7 @@ fun ChatScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = error ?: "",
+                                    text = combinedError ?: "",
                                     fontSize = 12.sp,
                                     color = Color(0xFFFF0000)
                                 )
@@ -132,6 +186,88 @@ fun ChatScreen(
                         }
                     }
 
+                    // Message input
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = messageText.value,
+                            onValueChange = { messageText.value = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text("Type a message...") },
+                            shape = RoundedCornerShape(24.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                unfocusedContainerColor = Color(0xFFF5F5F5),
+                                focusedContainerColor = Color(0xFFF5F5F5)
+                            ),
+                            maxLines = 4
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        // 📍 Location share button (USER ONLY)
+                        if (!isAdmin) {
+                            Box {
+                                IconButton(
+                                    onClick = {
+                                        localError = null
+
+                                        val hasPermission = ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.ACCESS_FINE_LOCATION
+                                        ) == PackageManager.PERMISSION_GRANTED
+
+                                        if (hasPermission) {
+                                            scope.launch {
+                                                isRequestingLocation = true
+                                                val loc = fetchCurrentLocation(context, fusedClient)
+                                                isRequestingLocation = false
+
+                                                if (loc != null) {
+                                                    locationToShare = loc
+                                                    showConfirmDialog = true
+                                                } else {
+                                                    localError = "Unable to fetch location. Try again."
+                                                }
+                                            }
+                                        } else {
+                                            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(Color(0xFFFF0000), CircleShape)
+                                ) {
+                                    Text("📍", fontSize = 18.sp, color = Color.White)
+                                }
+
+                                if (isRequestingLocation) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .align(Alignment.Center),
+                                        color = Color.White,
+                                        strokeWidth = 2.dp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+
+                        // Send button
+                        IconButton(
+                            onClick = {
+                                if (messageText.value.isNotBlank()) {
+                                    viewModel.sendMessage(
+                                        issueId = issueId,
+                                        senderId = currentUserId,
+                                        senderName = currentUserName,
+                                        text = messageText.value,
+                                        isAdmin = isAdmin
                     when {
                         // issue resolved — chat closed
                         isResolved -> {
@@ -187,6 +323,12 @@ fun ChatScreen(
                                         color = Color(0xFFF9A825)
                                     )
                                 }
+                            },
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(
+                                    color = if (messageText.value.isBlank()) Color.Gray else Color(0xFFFF0000),
+                                    shape = CircleShape
                             }
                         }
                         // Normal input
@@ -276,6 +418,7 @@ fun ChatScreen(
                         )
                     }
                 }
+
                 messages.isEmpty() -> {
                     // Empty state
                     Column(
@@ -306,6 +449,7 @@ fun ChatScreen(
                         )
                     }
                 }
+
                 else -> {
                     // Messages list
                     LazyColumn(
@@ -324,6 +468,45 @@ fun ChatScreen(
                 }
             }
         }
+    }
+
+    // ✅ Confirm dialog for location sharing (USER ONLY)
+    if (!isAdmin && showConfirmDialog && locationToShare != null) {
+        val lat = locationToShare!!.latitude
+        val lon = locationToShare!!.longitude
+
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false; locationToShare = null },
+            title = { Text("Share location?") },
+            text = {
+                Column {
+                    Text("Latitude: $lat")
+                    Text("Longitude: $lon")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("A Google Maps link will be sent to this chat.")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val mapsLink = "https://maps.google.com/?q=$lat,$lon"
+                    viewModel.sendMessage(
+                        issueId = issueId,
+                        senderId = currentUserId,
+                        senderName = currentUserName,
+                        text = "📍 Shared location: $mapsLink",
+                        isAdmin = isAdmin
+                    )
+                    showConfirmDialog = false
+                    locationToShare = null
+                }) { Text("Send") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showConfirmDialog = false
+                    locationToShare = null
+                }) { Text("Cancel") }
+            }
+        )
     }
 }
 
@@ -364,7 +547,7 @@ private fun MessageBubble(
                 }
             }
         }
-        
+
         // Message bubble
         Surface(
             color = if (isCurrentUser) Color(0xFFFF0000) else Color.White,
@@ -377,24 +560,19 @@ private fun MessageBubble(
             shadowElevation = 1.dp,
             modifier = Modifier.widthIn(max = 300.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = message.message,
                     fontSize = 15.sp,
                     color = if (isCurrentUser) Color.White else Color.Black
                 )
-                
+
                 Spacer(modifier = Modifier.height(4.dp))
-                
+
                 Text(
                     text = formatTimestamp(message.timestamp),
                     fontSize = 11.sp,
-                    color = if (isCurrentUser) 
-                        Color.White.copy(alpha = 0.7f) 
-                    else 
-                        Color.Gray
+                    color = if (isCurrentUser) Color.White.copy(alpha = 0.7f) else Color.Gray
                 )
             }
         }
@@ -404,7 +582,7 @@ private fun MessageBubble(
 private fun formatTimestamp(timestamp: Long): String {
     val now = System.currentTimeMillis()
     val diff = now - timestamp
-    
+
     return when {
         diff < 60 * 1000 -> "Just now"
         diff < 60 * 60 * 1000 -> {
@@ -416,6 +594,35 @@ private fun formatTimestamp(timestamp: Long): String {
         }
         else -> {
             SimpleDateFormat("MMM d, h:mm a", Locale.getDefault()).format(Date(timestamp))
+        }
+    }
+}
+
+@SuppressLint("MissingPermission")
+private suspend fun fetchCurrentLocation(
+    context: Context,
+    fusedClient: FusedLocationProviderClient
+): Location? {
+    val granted = ContextCompat.checkSelfPermission(
+        context,
+        Manifest.permission.ACCESS_FINE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+
+    if (!granted) return null
+
+    return suspendCancellableCoroutine { cont ->
+        try {
+            val tokenSource = com.google.android.gms.tasks.CancellationTokenSource()
+            fusedClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                tokenSource.token
+            )
+                .addOnSuccessListener { loc -> cont.resume(loc) }
+                .addOnFailureListener { cont.resume(null) }
+        } catch (_: SecurityException) {
+            cont.resume(null)
+        } catch (_: Exception) {
+            cont.resume(null)
         }
     }
 }

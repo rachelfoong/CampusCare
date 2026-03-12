@@ -59,6 +59,7 @@ class AdminViewModel : ViewModel() {
     val selectedCategory: StateFlow<IssueCategory?> = _selectedCategory.asStateFlow()
     
     private val _selectedUrgency = MutableStateFlow<IssueUrgency?>(null)
+    @Suppress("unused")
     val selectedUrgency: StateFlow<IssueUrgency?> = _selectedUrgency.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
@@ -74,7 +75,8 @@ class AdminViewModel : ViewModel() {
     // Loading state for staff
     private val _isLoadingStaff = MutableStateFlow(false)
     val isLoadingStaff: StateFlow<Boolean> = _isLoadingStaff.asStateFlow()
-    
+
+
     init {
         loadAllIssues()
         loadAllUsers()
@@ -133,6 +135,8 @@ class AdminViewModel : ViewModel() {
 
                 _staffList.value = staff
                 Log.d("AdminViewModel", "Loaded ${staff.size} staff members")
+
+                // compute hierarchy after staff list is available so dashboard can show data immediately
             } catch (e: Exception) {
                 Log.e("AdminViewModel", "Error loading staff: ${e.message}")
                 _staffList.value = emptyList()
@@ -154,6 +158,9 @@ class AdminViewModel : ViewModel() {
 
         // Calculate analytics whenever stats are updated
         calculateAnalytics()  // ← ADD THIS LINE
+
+        // Recompute staff hierarchy when issue set changes (admin dashboard open / data refresh)
+
     }
 
     fun calculateAnalytics() {
@@ -216,6 +223,7 @@ class AdminViewModel : ViewModel() {
             }
         }
     }
+
     
     fun setFilter(status: IssueStatus?) {
         _selectedFilter.value = status
@@ -225,6 +233,7 @@ class AdminViewModel : ViewModel() {
         _selectedCategory.value = category
     }
     
+    @Suppress("unused")
     fun setUrgencyFilter(urgency: IssueUrgency?) {
         _selectedUrgency.value = urgency
     }
@@ -314,17 +323,27 @@ class AdminViewModel : ViewModel() {
     }
 
     // Assign issue to staff member
+
     fun assignIssueToStaff(issueId: String, staffUserId: String, staffName: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 val docRef = firestore.collection("reports").document(issueId)
 
+                // Read old assignee BEFORE overwriting
+                val beforeSnap = docRef.get().await()
+                val oldIssue = beforeSnap.toObject(Issue::class.java)
+                val oldStaffId = oldIssue?.assignedTo
+                val oldStaffName = oldIssue?.assignedToName
+
+                // Log previous assignee for debugging (uses the variables so they aren't unused)
+                Log.d("ASSIGN_DEBUG", "Previous assignee for $issueId was $oldStaffId ($oldStaffName) - assigning to $staffUserId ($staffName)")
+
                 // Update both assignedTo and status to IN_PROGRESS
                 docRef.update(
                     mapOf(
                         "assignedTo" to staffUserId,
-                        "assignedToName" to staffName,  // ← ADD THIS LINE
+                        "assignedToName" to staffName,  // keep assignment name write
                         "status" to IssueStatus.IN_PROGRESS.name,
                         "updatedAt" to System.currentTimeMillis()
                     )
@@ -357,6 +376,8 @@ class AdminViewModel : ViewModel() {
 
                     Log.d("AdminViewModel", "Issue $issueId assigned to $staffName")
                 }
+
+
             } catch (e: Exception) {
                 Log.e("AdminViewModel", "Error assigning issue: ${e.message}")
             } finally {
@@ -390,4 +411,30 @@ class AdminViewModel : ViewModel() {
         
         return filtered
     }
+    private suspend fun fetchIssueInsights(issueIds: List<String>): List<com.university.campuscare.data.model.IssueConversationInsights> {
+        if (issueIds.isEmpty()) return emptyList()
+
+        val results = mutableListOf<com.university.campuscare.data.model.IssueConversationInsights>()
+        val chunks = issueIds.chunked(10)
+
+        for (chunk in chunks) {
+            val snap = firestore.collection("issue_insights")
+                .whereIn("issueId", chunk)
+                .get()
+                .await()
+
+            results += snap.documents.mapNotNull {
+                it.toObject(com.university.campuscare.data.model.IssueConversationInsights::class.java)
+            }
+        }
+        return results
+    }
+
+    private fun median(sorted: List<Long>): Long? {
+        if (sorted.isEmpty()) return null
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 1) sorted[mid] else (sorted[mid - 1] + sorted[mid]) / 2
+    }
+
+
 }
