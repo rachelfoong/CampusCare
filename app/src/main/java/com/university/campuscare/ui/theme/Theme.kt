@@ -1,5 +1,6 @@
 package com.university.campuscare.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -9,6 +10,10 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.SideEffect // <--- Add this import
+import androidx.compose.ui.graphics.toArgb // <--- Add this import
+import androidx.compose.ui.platform.LocalView // <--- Add this import
+import androidx.core.view.WindowCompat // <--- Add this import
 
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
@@ -47,6 +52,19 @@ fun CampusCareTheme(
 
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+
+            // 1. Set the status bar background to match your app's background
+            window.statusBarColor = colorScheme.background.toArgb()
+
+            // 2. Make icons dark if in light theme, and light if in dark theme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+        }
     }
 
     MaterialTheme(

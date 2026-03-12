@@ -8,7 +8,7 @@ data class Notification(
     val message: String = "",
     val issueId: String? = null,
     val timestamp: Long = System.currentTimeMillis(),
-    val isRead: Boolean = false
+    val read: Boolean = false
 )
 
 enum class NotificationType {

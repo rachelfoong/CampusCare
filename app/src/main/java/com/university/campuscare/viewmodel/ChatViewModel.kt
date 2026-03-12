@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
+import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.Message
 import com.university.campuscare.data.model.Notification
 import com.university.campuscare.data.model.NotificationType
@@ -51,6 +52,19 @@ class ChatViewModel : ViewModel() {
     fun loadMessages(issueId: String) {
         messagesJob?.cancel()
         messagesJob = viewModelScope.launch {
+    private val _issueStatus = MutableStateFlow<IssueStatus?>(null)
+    val issueStatus: StateFlow<IssueStatus?> = _issueStatus.asStateFlow()
+
+    // load messages by issueid
+    fun loadMessages(issueId: String) {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("reports").document(issueId).get().await()
+                val issue = snapshot.toObject(Issue::class.java)
+                _issueStatus.value = issue?.status
+            } catch (_: Exception) {}
+        }
+        viewModelScope.launch {
             chatRepository.getMessages(issueId).collect { result ->
                 when (result) {
                     is DataResult.Loading -> _isLoading.value = true
@@ -66,6 +80,15 @@ class ChatViewModel : ViewModel() {
                     else -> {}
                 }
             }
+        }
+    }
+
+    fun refreshIssueStatus(issueId: String) {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("reports").document(issueId).get().await()
+                _issueStatus.value = snapshot.toObject(Issue::class.java)?.status
+            } catch (_: Exception) {}
         }
     }
 

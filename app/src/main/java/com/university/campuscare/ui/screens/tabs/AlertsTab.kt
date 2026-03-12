@@ -59,7 +59,7 @@ fun AlertsTab(userId: String, viewModel: NotificationsViewModel = viewModel()) {
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            if (notifications.any { !it.isRead }) {
+            if (notifications.any { !it.read }) {
                 TextButton(
                     onClick = { viewModel.markAllAsRead(userId) },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFFF0000))
@@ -123,7 +123,7 @@ fun AlertsTab(userId: String, viewModel: NotificationsViewModel = viewModel()) {
                                 title = notification.title,
                                 message = notification.message,
                                 time = formatTimestamp(notification.timestamp),
-                                isRead = notification.isRead,
+                                isRead = notification.read,
                                 onTap = { viewModel.markAsRead(userId, notification.id) }
                             )
                         }

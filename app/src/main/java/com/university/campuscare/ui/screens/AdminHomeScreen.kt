@@ -27,11 +27,11 @@ sealed class AdminBottomNavItem(
     val title: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
-    object Dashboard : AdminBottomNavItem("Dashboard", Icons.Default.Home)
-    object AllReports : AdminBottomNavItem("Reports", Icons.Default.CheckCircle)
-    object Analytics : AdminBottomNavItem("Analytics", Icons.Default.CheckCircle)
-    object Users : AdminBottomNavItem("Users", Icons.Default.AccountCircle)
-    object StaffMgmt : AdminBottomNavItem("Staff", Icons.Default.Person)
+    object Dashboard : AdminBottomNavItem("Dashboard", Icons.Default.Dashboard)
+    object AllReports : AdminBottomNavItem("Reports", Icons.Default.Assignment)
+    object Analytics : AdminBottomNavItem("Analytics", Icons.Default.BarChart)
+    object Users : AdminBottomNavItem("Users", Icons.Default.Group)
+    object StaffMgmt : AdminBottomNavItem("Staff", Icons.Default.Engineering)
     object Settings : AdminBottomNavItem("Settings", Icons.Default.Settings)
 }
 
@@ -45,7 +45,6 @@ fun AdminHomeScreen(
     viewModel: AdminViewModel = viewModel(),
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    var showMenu by remember { mutableStateOf(false) }
 
     val bottomNavItems = listOf(
         AdminBottomNavItem.Dashboard,
@@ -64,37 +63,6 @@ fun AdminHomeScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text("Admin Panel", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Welcome, $userName", fontSize = 12.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ),
-                actions = {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Logout") },
-                            onClick = {
-                                showMenu = false
-                                onLogout()
-                            },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null) }
-                        )
-                    }
-                }
-            )
-        },
         bottomBar = {
             NavigationBar {
                 bottomNavItems.forEachIndexed { index, item ->
@@ -120,7 +88,7 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(navController, onNavigateToChat, viewModel)
+                0 -> AdminDashboardScreen(navController, userName, onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)

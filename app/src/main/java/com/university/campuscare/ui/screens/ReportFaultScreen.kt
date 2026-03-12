@@ -1,10 +1,9 @@
 //kotlin
 package com.university.campuscare.ui.screens
 
+import android.os.Build
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -35,6 +34,7 @@ import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
+import com.university.campuscare.location.scheduleLocationWorker
 import kotlinx.coroutines.launch
 import android.location.Geocoder
 import android.net.Uri
@@ -50,7 +50,8 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.material.icons.filled.PhotoLibrary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +106,16 @@ fun ReportFaultScreen(
         if (success && tempPhotoUri != null) {
             // save URI string to ViewModel
             viewModel.setPhotoUri(tempPhotoUri.toString())
+        }
+    }
+
+    // Photo Picker Launcher (Gallery)
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            // save URI string to ViewModel
+            viewModel.setPhotoUri(uri.toString())
         }
     }
 
@@ -166,6 +177,18 @@ fun ReportFaultScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                scheduleLocationWorker(context)
+            }
+        }
+    }
+
     LaunchedEffect(reportState) {
         if (reportState is ReportState.Success) onNavigateBack()
     }
@@ -222,7 +245,6 @@ fun ReportFaultScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -294,6 +316,12 @@ fun ReportFaultScreen(
                                 Color(0xFFFFA726),
                                 Modifier.weight(1f)
                             )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             UrgencyButton(
                                 "High",
                                 selectedUrgency == IssueUrgency.HIGH,
@@ -398,11 +426,11 @@ fun ReportFaultScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             PhotoLocationCard(
                                 Icons.Default.CameraAlt,
-                                if (photoUri == null) "Take Photo" else "Retake Photo",
+                                "Camera",
                                 onClick = {
                                     if (ContextCompat.checkSelfPermission(
                                             context,
@@ -419,8 +447,18 @@ fun ReportFaultScreen(
                                 Modifier.weight(1f)
                             )
                             PhotoLocationCard(
+                                Icons.Default.PhotoLibrary,
+                                "Gallery",
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                Modifier.weight(1f)
+                            )
+                            PhotoLocationCard(
                                 Icons.Default.LocationOn,
-                                "Add Location",
+                                "Location",
                                 onClick = {
                                     // Check permission or request, then actively fetch and set `room`
                                     if (ContextCompat.checkSelfPermission(
