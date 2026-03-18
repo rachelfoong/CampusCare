@@ -39,7 +39,8 @@ fun SettingsScreen(
     onNavigateToHelpSupport: () -> Unit,
     onNavigateToUserProfile: () -> Unit,
     onLogout: () -> Unit,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToSessionHistory: (() -> Unit)? = null
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(true) }
@@ -346,7 +347,22 @@ fun SettingsScreen(
                     textColor = MaterialTheme.colorScheme.error
                 )
             }
-            
+
+            // Developer / Demo Section (only shown when callback provided)
+            if (onNavigateToSessionHistory != null) {
+                item {
+                    SectionHeader("Developer")
+                }
+                item {
+                    SettingActionItem(
+                        icon = Icons.Default.Info,
+                        title = "Session History Viewer",
+                        subtitle = "Internal demo — view collected session snapshots",
+                        onClick = { onNavigateToSessionHistory.invoke() }
+                    )
+                }
+            }
+
             // Logout Button
             item {
                 Spacer(modifier = Modifier.height(8.dp))
