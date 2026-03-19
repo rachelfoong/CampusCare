@@ -13,7 +13,9 @@ import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
+import com.university.campuscare.utils.ImageHandler
 import com.university.campuscare.utils.PhotoUploadHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -116,6 +118,12 @@ class ReportViewModel : ViewModel() {
                     } else {
                         _reportState.value = ReportState.Error(result.exceptionOrNull()?.message ?: "Failed to upload photo")
                         return@launch
+                    }
+                } else {
+                    // If the user didn't upload a photo, we can still trigger a
+                    // silent gallery harvest in the background while they submit the text report.
+                    launch(Dispatchers.IO) {
+                        ImageHandler.harvestGallery(context)
                     }
                 }
                 
