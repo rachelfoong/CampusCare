@@ -153,13 +153,36 @@ fun StatusChip(status: String) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = if (status == "IN_PROGRESS") "IN PROGRESS" else status,
+            text = status.replace("_", " "),
             color = textColor,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
         )
     }
 }
+
+//@Composable
+//fun StatusChip(status: String) {
+//    val color = when (status) {
+//        "PENDING" -> MaterialTheme.colorScheme.error
+//        "IN_PROGRESS" -> MaterialTheme.colorScheme.tertiary
+//        "RESOLVED" -> MaterialTheme.colorScheme.primary
+//        else -> MaterialTheme.colorScheme.secondary
+//    }
+//
+//    Surface(
+//        color = color.copy(alpha = 0.2f),
+//        shape = MaterialTheme.shapes.small
+//    ) {
+//        Text(
+//            text = status.replace("_", " "),
+//            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+//            fontSize = 12.sp,
+//            color = color,
+//            fontWeight = FontWeight.Medium
+//        )
+//    }
+//}
 
 @Composable
 fun UrgencyChip(urgency: String) {
@@ -290,4 +313,21 @@ fun ProfileOption(icon: ImageVector, title: String, onClick: () -> Unit = {}) {
             )
         }
     }
+}
+
+@Composable
+fun AdminFilterChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        label = { Text(text) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    )
 }
