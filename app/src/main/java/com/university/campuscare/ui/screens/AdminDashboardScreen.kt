@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,17 +17,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.ui.components.StatusChip
 import com.university.campuscare.ui.components.UrgencyChip
+import com.university.campuscare.ui.components.AssignStaffDialog
+import com.university.campuscare.ui.components.AdminFilterChip
+import com.university.campuscare.ui.Screen
 import com.university.campuscare.viewmodel.AdminViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.material.icons.automirrored.filled.Chat
-import com.university.campuscare.ui.components.AssignStaffDialog
-import androidx.navigation.NavController
-import com.university.campuscare.ui.Screen
 
 @Composable
 fun AdminDashboardScreen(
