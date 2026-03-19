@@ -2,6 +2,7 @@ package com.university.campuscare.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,7 +22,7 @@ sealed class AdminBottomNavItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
     object Dashboard : AdminBottomNavItem("Dashboard", Icons.Default.Dashboard)
-    object AllReports : AdminBottomNavItem("Reports", Icons.Default.Assignment)
+    object AllReports : AdminBottomNavItem("Reports", Icons.AutoMirrored.Filled.Assignment)
     object Analytics : AdminBottomNavItem("Analytics", Icons.Default.BarChart)
     object Users : AdminBottomNavItem("Users", Icons.Default.Group)
     object StaffMgmt : AdminBottomNavItem("Staff", Icons.Default.Engineering)
@@ -71,9 +72,9 @@ fun AdminHomeScreen(
                         selected = selectedTab == index,
                         onClick = { selectedTab = index },
                         colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Color(0xFFFF0000), // Red icon
-                            selectedTextColor = Color(0xFFFF0000), // Red text
-                            indicatorColor = Color(0xFFFFEBEB)     // Light red indicator
+                            selectedIconColor = Color(0xFFFF0000),
+                            selectedTextColor = Color(0xFFFF0000),
+                            indicatorColor = Color(0xFFFFEBEB)
                         )
                     )
                 }
@@ -89,8 +90,8 @@ fun AdminHomeScreen(
                 0 -> AdminDashboardScreen(navController, userName, onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
-                3 -> AdminUsersTab(viewModel)
-                4 -> StaffManagementTab(authViewModel, viewModel)
+                3 -> AdminUsersTab(viewModel, authViewModel)
+                4 -> StaffManagementTab( viewModel, authViewModel)
                 5 -> AdminSettingsTab(userName, onLogout, navController)
             }
         }
