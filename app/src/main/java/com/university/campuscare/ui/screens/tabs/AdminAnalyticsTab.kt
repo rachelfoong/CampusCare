@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,7 +28,9 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
 
         // Report Statistics Card
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -49,7 +52,9 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
 
         // Category Breakdown Card
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp)
@@ -65,19 +70,19 @@ fun AdminAnalyticsTab(viewModel: AdminViewModel) {
                     Text(
                         text = "No data available",
                         fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = Color.Gray
                     )
                 } else {
                     val categories = analyticsData.categoryBreakdown.entries.sortedByDescending { it.value }
                     val colors = listOf(
-                        MaterialTheme.colorScheme.primary,
-                        MaterialTheme.colorScheme.secondary,
-                        MaterialTheme.colorScheme.tertiary,
-                        MaterialTheme.colorScheme.error
+                        Color(0xFFFF0000), // Primary Red
+                        Color(0xFFD32F2F), // Dark Red
+                        Color(0xFFFF5252), // Light Red
+                        Color(0xFFFF8A80)  // Lighter Red
                     )
 
                     categories.forEachIndexed { index, (category, percentage) ->
-                        val color = colors.getOrElse(index) { MaterialTheme.colorScheme.primary }
+                        val color = colors.getOrElse(index) { Color(0xFFFF0000) }
                         CategoryBar(category, percentage, color)
                     }
                 }
@@ -99,13 +104,13 @@ fun AnalyticsRow(label: String, value: String) {
             text = value,
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = Color(0xFFFF0000)
         )
     }
 }
 
 @Composable
-fun CategoryBar(label: String, percentage: Int, color: androidx.compose.ui.graphics.Color) {
+fun CategoryBar(label: String, percentage: Int, color: Color) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -124,7 +129,8 @@ fun CategoryBar(label: String, percentage: Int, color: androidx.compose.ui.graph
             modifier = Modifier
                 .fillMaxWidth()
                 .height(8.dp),
-            color = color
+            color = color,
+            trackColor = Color(0xFFFFEBEB)
         )
     }
 }

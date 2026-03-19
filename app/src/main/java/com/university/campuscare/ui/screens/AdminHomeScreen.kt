@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.university.campuscare.viewmodel.AdminViewModel
@@ -35,7 +37,7 @@ fun AdminHomeScreen(
     authViewModel: AuthViewModel,
     viewModel: AdminViewModel = viewModel(),
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     val bottomNavItems = listOf(
         AdminBottomNavItem.Dashboard,
@@ -67,7 +69,12 @@ fun AdminHomeScreen(
                         },
                         label = { Text(item.title, fontSize = 11.sp) },
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index }
+                        onClick = { selectedTab = index },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFFF0000), // Red icon
+                            selectedTextColor = Color(0xFFFF0000), // Red text
+                            indicatorColor = Color(0xFFFFEBEB)     // Light red indicator
+                        )
                     )
                 }
             }

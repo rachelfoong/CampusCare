@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.ui.components.AdminFilterChip
@@ -85,11 +86,11 @@ fun AdminReportsTab(viewModel: AdminViewModel) {
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color(0xFFFF0000))
             }
         } else if (filteredIssues.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No reports found", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
+                Text("No reports found", color = Color.Gray)
             }
         } else {
             LazyColumn(
@@ -119,6 +120,8 @@ fun AdminReportCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         onClick = { }
     ) {
         Column(
@@ -144,7 +147,7 @@ fun AdminReportCard(
             Text(
                 text = description,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                color = Color.DarkGray
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -156,12 +159,12 @@ fun AdminReportCard(
                 Text(
                     text = "By: $reporter",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    color = Color.Gray
                 )
                 Text(
                     text = date,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    color = Color.Gray
                 )
             }
         }

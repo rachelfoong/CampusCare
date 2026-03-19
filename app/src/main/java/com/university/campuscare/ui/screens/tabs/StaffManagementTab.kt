@@ -1,4 +1,4 @@
-package com.university.campuscare.ui.screens
+package com.university.campuscare.ui.screens.tabs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,19 +53,20 @@ fun StaffManagementTab(
             
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = Color(0xFFFF0000),
+                contentColor = Color.White
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Staff")
             }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+//        Spacer(modifier = Modifier.height(16.dp))
         
-        Text(
-            text = "Create staff/admin accounts for campus security team",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-        )
+//        Text(
+//            text = "Create staff/admin accounts for campus security team",
+//            fontSize = 14.sp,
+//            color = Color.Gray
+//        )
         
         Spacer(modifier = Modifier.height(16.dp))
         
@@ -78,12 +80,12 @@ fun StaffManagementTab(
                         Icons.Default.Person,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                        tint = Color.LightGray
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         "No staff members yet",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        color = Color.Gray
                     )
                 }
             }
@@ -94,6 +96,7 @@ fun StaffManagementTab(
                 items(staffList) { staff ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                     ) {
                         Row(
@@ -112,22 +115,22 @@ fun StaffManagementTab(
                                 Text(
                                     text = staff.email,
                                     fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                    color = Color.DarkGray
                                 )
                                 if (staff.department.isNotEmpty()) {
                                     Text(
                                         text = "Department: ${staff.department}",
                                         fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        color = Color.Gray
                                     )
                                 }
                             }
                             
                             Surface(
                                 color = if (staff.role == "ADMIN") {
-                                    MaterialTheme.colorScheme.error.copy(alpha = 0.1f)
+                                    Color(0xFFFFEBEB)
                                 } else {
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                    Color(0xFFF5F5F5)
                                 },
                                 shape = MaterialTheme.shapes.small
                             ) {
@@ -137,9 +140,9 @@ fun StaffManagementTab(
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = if (staff.role == "ADMIN") {
-                                        MaterialTheme.colorScheme.error
+                                        Color(0xFFFF0000)
                                     } else {
-                                        MaterialTheme.colorScheme.primary
+                                        Color.DarkGray
                                     }
                                 )
                             }
@@ -180,6 +183,12 @@ fun CreateStaffDialog(
     var isCreating by remember { mutableStateOf(false) }
     
     val authState by authViewModel.authState.collectAsState()
+
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = Color(0xFFFF0000),
+        focusedLabelColor = Color(0xFFFF0000),
+        cursorColor = Color(0xFFFF0000)
+    )
     
     LaunchedEffect(authState) {
         when (authState) {
@@ -207,6 +216,7 @@ fun CreateStaffDialog(
                 onDismiss()
             }
         },
+        containerColor = Color.White,
         title = { Text("Create Staff Account") },
         text = {
             Column(
@@ -220,7 +230,8 @@ fun CreateStaffDialog(
                     onValueChange = { name = it },
                     label = { Text("Full Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = textFieldColors
                 )
                 
                 OutlinedTextField(
@@ -229,7 +240,8 @@ fun CreateStaffDialog(
                     label = { Text("Email") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = textFieldColors
                 )
                 
                 OutlinedTextField(
@@ -243,17 +255,13 @@ fun CreateStaffDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    colors = textFieldColors,
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) 
-                                    Icons.Default.Visibility 
-                                else 
-                                    Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) 
-                                    "Hide password" 
-                                else 
-                                    "Show password"
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                tint = if (passwordVisible) Color(0xFFFF0000) else Color.Gray
                             )
                         }
                     }
@@ -265,7 +273,8 @@ fun CreateStaffDialog(
                     label = { Text("Department (Optional)") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("e.g., Security, IT") }
+                    placeholder = { Text("e.g., Security, IT") },
+                    colors = textFieldColors
                 )
                 
                 ExposedDropdownMenuBox(
@@ -277,6 +286,7 @@ fun CreateStaffDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Role") },
+                        colors = textFieldColors,
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleDropdownExpanded)
                         },
@@ -286,7 +296,8 @@ fun CreateStaffDialog(
                     )
                     ExposedDropdownMenu(
                         expanded = roleDropdownExpanded,
-                        onDismissRequest = { roleDropdownExpanded = false }
+                        onDismissRequest = { roleDropdownExpanded = false },
+                        containerColor = Color.White
                     ) {
                         DropdownMenuItem(
                             text = { Text("STAFF - Can view and respond") },
@@ -308,7 +319,7 @@ fun CreateStaffDialog(
                 if (errorMessage.isNotEmpty()) {
                     Text(
                         text = errorMessage,
-                        color = MaterialTheme.colorScheme.error,
+                        color = Color(0xFFFF0000),
                         fontSize = 14.sp
                     )
                 }
@@ -331,12 +342,13 @@ fun CreateStaffDialog(
                 enabled = !isCreating && 
                          name.isNotEmpty() && 
                          email.isNotEmpty() && 
-                         password.length >= 6
+                         password.length >= 6,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000))
             ) {
                 if (isCreating) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = Color.White
                     )
                 } else {
                     Text("Create")
@@ -349,7 +361,8 @@ fun CreateStaffDialog(
                     authViewModel.clearError()
                     onDismiss()
                 },
-                enabled = !isCreating
+                enabled = !isCreating,
+                colors = ButtonDefaults.textButtonColors(contentColor = Color.Gray)
             ) {
                 Text("Cancel")
             }

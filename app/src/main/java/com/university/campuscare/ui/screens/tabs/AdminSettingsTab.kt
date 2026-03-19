@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,7 +29,7 @@ fun AdminSettingsTab(userName: String, onLogout: () -> Unit, navController: NavC
             Icons.Default.Settings,
             contentDescription = null,
             modifier = Modifier.size(100.dp),
-            tint = MaterialTheme.colorScheme.secondary
+            tint = Color(0xFFFF0000)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -42,7 +43,7 @@ fun AdminSettingsTab(userName: String, onLogout: () -> Unit, navController: NavC
         Text(
             text = "Administrator",
             fontSize = 16.sp,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -65,10 +66,11 @@ fun AdminSettingsTab(userName: String, onLogout: () -> Unit, navController: NavC
 
         Button(
             onClick = onLogout,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error
-            )
+                containerColor = Color(0xFFFF0000)
+            ),
+            shape = MaterialTheme.shapes.medium
         ) {
             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
@@ -83,7 +85,9 @@ fun SettingsOption(icon: androidx.compose.ui.graphics.vector.ImageVector, text: 
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        onClick = onClick
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -91,7 +95,7 @@ fun SettingsOption(icon: androidx.compose.ui.graphics.vector.ImageVector, text: 
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(icon, contentDescription = null)
+            Icon(icon, contentDescription = null, tint = Color(0xFFFF0000))
             Spacer(modifier = Modifier.width(16.dp))
             Text(text, fontSize = 16.sp)
             Spacer(modifier = Modifier.weight(1f))

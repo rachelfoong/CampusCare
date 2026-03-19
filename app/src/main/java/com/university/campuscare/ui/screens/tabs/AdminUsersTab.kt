@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,8 +39,8 @@ fun AdminUsersTab(viewModel: AdminViewModel) {
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            IconButton(onClick = { }) {
-                Icon(Icons.Default.Add, contentDescription = "Add User")
+            IconButton(onClick = {/* TODO: Handle add user button click */}) {
+                Icon(Icons.Default.Add, contentDescription = "Add User", tint = Color(0xFFFF0000))
             }
         }
 
@@ -63,7 +64,8 @@ fun AdminUsersTab(viewModel: AdminViewModel) {
 @Composable
 fun UserCard(name: String, email: String, reportsCount: Int) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Row(
             modifier = Modifier
@@ -75,7 +77,7 @@ fun UserCard(name: String, email: String, reportsCount: Int) {
                 Icons.Default.AccountCircle,
                 contentDescription = null,
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.primary
+                tint = Color(0xFFFF0000)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
@@ -83,7 +85,7 @@ fun UserCard(name: String, email: String, reportsCount: Int) {
                 Text(
                     text = email,
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = Color.Gray
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
@@ -91,12 +93,12 @@ fun UserCard(name: String, email: String, reportsCount: Int) {
                     text = "$reportsCount",
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFFFF0000)
                 )
                 Text(
                     text = "reports",
                     fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    color = Color.Gray
                 )
             }
         }
