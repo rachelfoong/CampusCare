@@ -1,10 +1,9 @@
 //kotlin
 package com.university.campuscare.ui.screens
 
+import android.os.Build
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -35,6 +34,7 @@ import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
+import com.university.campuscare.location.scheduleLocationWorker
 import kotlinx.coroutines.launch
 import android.location.Geocoder
 import android.net.Uri
@@ -174,6 +174,18 @@ fun ReportFaultScreen(
             fetchAndSetLocation()
         } else {
             coroutineScope.launch { snackbarHostState.showSnackbar("Location permission denied") }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                scheduleLocationWorker(context)
+            }
         }
     }
 

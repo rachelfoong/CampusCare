@@ -9,3 +9,5 @@ data class Message(
     val timestamp: Long = System.currentTimeMillis(),
     val isFromAdmin: Boolean = false
 )
+
+

@@ -175,6 +175,9 @@ fun CampusCareApp() {
         }
 
         composable(Screen.Settings.route) {
+            val authState = authViewModel.authState.collectAsState().value
+            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
@@ -185,7 +188,10 @@ fun CampusCareApp() {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                authViewModel = authViewModel
+                authViewModel = authViewModel,
+                onNavigateToSessionHistory = {
+                    navController.navigate(Screen.SessionHistoryViewer.createRoute(userId))
+                }
             )
         }
 
@@ -271,6 +277,18 @@ fun CampusCareApp() {
                 onNavigateToDirectChat = { adminId, adminName ->
                     navController.navigate(Screen.DirectChat.createRoute(adminId, adminName))
                 }
+            )
+        }
+
+        // Internal demo screen for session history viewer
+        composable(
+            route = Screen.SessionHistoryViewer.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            SessionHistoryViewerScreen(
+                userId = userId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }
