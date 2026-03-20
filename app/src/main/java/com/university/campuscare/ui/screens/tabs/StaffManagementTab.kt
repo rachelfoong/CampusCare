@@ -25,8 +25,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffManagementTab(
-    authViewModel: AuthViewModel,
-    adminViewModel: AdminViewModel = viewModel()
+    adminViewModel: AdminViewModel,
+    authViewModel: AuthViewModel
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
     val staffList by adminViewModel.staffList.collectAsState()
