@@ -20,16 +20,17 @@ import androidx.compose.ui.unit.sp
 import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AdminViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffManagementTab(
-    adminViewModel: AdminViewModel,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    adminViewModel: AdminViewModel = viewModel()
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
     val staffList by adminViewModel.staffList.collectAsState()
-    
+
     LaunchedEffect(Unit) {
         adminViewModel.loadStaffMembers()
     }
@@ -49,7 +50,7 @@ fun StaffManagementTab(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
-            
+
             FloatingActionButton(
                 onClick = { showCreateDialog = true },
                 containerColor = Color(0xFFFF0000),
@@ -58,9 +59,9 @@ fun StaffManagementTab(
                 Icon(Icons.Default.Add, contentDescription = "Add Staff")
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         if (staffList.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -116,7 +117,7 @@ fun StaffManagementTab(
                                     )
                                 }
                             }
-                            
+
                             Surface(
                                 color = if (staff.role == "ADMIN") {
                                     Color(0xFFFFEBEB)
@@ -143,7 +144,7 @@ fun StaffManagementTab(
             }
         }
     }
-    
+
     if (showCreateDialog) {
         CreateStaffDialog(
             authViewModel = authViewModel,
@@ -167,12 +168,15 @@ fun CreateStaffDialog(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var department by remember { mutableStateOf("") }
+    var deptDropdownExpanded by remember { mutableStateOf(false) }
+    val departments = listOf("Security", "Facilities", "IT", "Administration", "Housing")
+
     var selectedRole by remember { mutableStateOf("STAFF") }
     var roleDropdownExpanded by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isCreating by remember { mutableStateOf(false) }
-    
+
     val authState by authViewModel.authState.collectAsState()
 
     val textFieldColors = OutlinedTextFieldDefaults.colors(
@@ -180,7 +184,7 @@ fun CreateStaffDialog(
         focusedLabelColor = Color(0xFFFF0000),
         cursorColor = Color(0xFFFF0000)
     )
-    
+
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
@@ -199,9 +203,9 @@ fun CreateStaffDialog(
             else -> {}
         }
     }
-    
+
     AlertDialog(
-        onDismissRequest = { 
+        onDismissRequest = {
             if (!isCreating) {
                 authViewModel.clearError()
                 onDismiss()
@@ -224,7 +228,7 @@ fun CreateStaffDialog(
                     singleLine = true,
                     colors = textFieldColors
                 )
-                
+
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -234,14 +238,14 @@ fun CreateStaffDialog(
                     singleLine = true,
                     colors = textFieldColors
                 )
-                
+
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
-                    visualTransformation = if (passwordVisible) 
-                        VisualTransformation.None 
-                    else 
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None
+                    else
                         PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth(),
@@ -250,24 +254,55 @@ fun CreateStaffDialog(
                     trailingIcon = {
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                imageVector = if (passwordVisible)
+                                    Icons.Default.Visibility
+                                else
+                                    Icons.Default.VisibilityOff,
+                                contentDescription = if (passwordVisible)
+                                    "Hide password"
+                                else
+                                    "Show password",
                                 tint = if (passwordVisible) Color(0xFFFF0000) else Color.Gray
                             )
                         }
                     }
                 )
-                
-                OutlinedTextField(
-                    value = department,
-                    onValueChange = { department = it },
-                    label = { Text("Department (Optional)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    placeholder = { Text("e.g., Security, IT") },
-                    colors = textFieldColors
-                )
-                
+
+                ExposedDropdownMenuBox(
+                    expanded = deptDropdownExpanded,
+                    onExpandedChange = { deptDropdownExpanded = !deptDropdownExpanded }
+                ) {
+                    OutlinedTextField(
+                        value = department.ifEmpty { "Select Department" },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Department") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = deptDropdownExpanded)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = textFieldColors
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = deptDropdownExpanded,
+                        onDismissRequest = { deptDropdownExpanded = false },
+                        containerColor = Color.White
+                    ) {
+                        departments.forEach { deptOption ->
+                            DropdownMenuItem(
+                                text = { Text(deptOption) },
+                                onClick = {
+                                    department = deptOption
+                                    deptDropdownExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 ExposedDropdownMenuBox(
                     expanded = roleDropdownExpanded,
                     onExpandedChange = { roleDropdownExpanded = !roleDropdownExpanded }
@@ -306,7 +341,7 @@ fun CreateStaffDialog(
                         )
                     }
                 }
-                
+
                 if (errorMessage.isNotEmpty()) {
                     Text(
                         text = errorMessage,
@@ -330,10 +365,11 @@ fun CreateStaffDialog(
                         role = selectedRole
                     )
                 },
-                enabled = !isCreating && 
-                         name.isNotEmpty() && 
-                         email.isNotEmpty() && 
-                         password.length >= 6,
+                enabled = !isCreating &&
+                        name.isNotEmpty() &&
+                        email.isNotEmpty() &&
+                        password.length >= 6 &&
+                        department.isNotEmpty(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000))
             ) {
                 if (isCreating) {
