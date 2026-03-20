@@ -2,7 +2,7 @@ package com.university.campuscare.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,7 +22,7 @@ sealed class BottomNavItem(
     val icon: ImageVector
 ) {
     object Home : BottomNavItem("home", "Home", Icons.Default.Home)
-    object Issues : BottomNavItem("issues", "Issues", Icons.AutoMirrored.Filled.List)
+    object Issues : BottomNavItem("issues", "Issues", Icons.AutoMirrored.Filled.Assignment)
     object Alerts : BottomNavItem("alerts", "Alerts", Icons.Default.Notifications)
     object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
 }
