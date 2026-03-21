@@ -85,7 +85,8 @@ fun AdminUsersTab(
             }
         } else {
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 items(studentUsers) { user ->
                     val reportsCount = allIssues.count { it.reportedBy == user.userId }
@@ -114,7 +115,7 @@ fun AdminUsersTab(
 @Composable
 fun UserCard(name: String, email: String, reportsCount: Int) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
