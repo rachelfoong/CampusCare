@@ -356,21 +356,6 @@ private fun AdminIssueCard(
                         color = Color.Gray
                     )
                 }
-                Box {
-                    IconButton(onClick = { showOptions = true }) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = Color.Gray
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showOptions,
-                        onDismissRequest = { showOptions = false }
-                    ) {
-                    // Add things in dropdownmenu if needed
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))

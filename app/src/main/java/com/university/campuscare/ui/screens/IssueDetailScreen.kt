@@ -233,11 +233,6 @@ private fun IssueDetailContent(
                         fontWeight = FontWeight.Medium,
                         color = Color.Black
                     )
-                    Text(
-                        text = "Reporter ID: ${issue.reportedBy}...",
-                        fontSize = 13.sp,
-                        color = Color.Gray
-                    )
                 }
             }
         }
@@ -291,11 +286,6 @@ private fun IssueDetailContent(
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
                     color = Color.Black
-                )
-                Text(
-                    text = "Staff ID: ${issue.assignedTo}...",
-                    fontSize = 13.sp,
-                    color = Color.Gray
                 )
             }
         }
