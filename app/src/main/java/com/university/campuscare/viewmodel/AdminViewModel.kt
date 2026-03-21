@@ -20,6 +20,7 @@ import com.university.campuscare.data.model.Notification
 import com.university.campuscare.data.model.NotificationType
 import kotlinx.coroutines.tasks.await
 import java.util.Calendar
+import kotlin.math.roundToInt
 
 data class AdminStats(
     val total: Int = 0,
@@ -168,7 +169,7 @@ class AdminViewModel : ViewModel() {
             try {
                 val issues = _allIssues.value
 
-                // 1. Total Reports This Month
+                // Total Reports This Month
                 val calendar = Calendar.getInstance()
                 val currentMonth = calendar.get(Calendar.MONTH)
                 val currentYear = calendar.get(Calendar.YEAR)
@@ -181,7 +182,7 @@ class AdminViewModel : ViewModel() {
                             issueCalendar.get(Calendar.YEAR) == currentYear
                 }
 
-                // 2. Average Resolution Time
+                // Average Resolution Time
                 val resolvedIssues = issues.filter { it.status == IssueStatus.RESOLVED }
                 val averageResolutionTimeMillis = if (resolvedIssues.isNotEmpty()) {
                     resolvedIssues.map { it.updatedAt - it.createdAt }.average()
@@ -195,15 +196,29 @@ class AdminViewModel : ViewModel() {
                     "< 1 day"
                 }
 
-                // 4. Most Reported Issue Category
+                // Most Reported Issue Category
                 val categoryCount = issues.groupBy { it.category }
                     .mapValues { it.value.size }
                 val mostReportedCategory = categoryCount.maxByOrNull { it.value }?.key ?: "None"
 
-                // 5. Category Breakdown with Percentages
+                // Category Breakdown with Percentages
                 val total = issues.size
                 val categoryBreakdown = if (total > 0) {
-                    categoryCount.mapValues { (it.value * 100) / total }
+                    // Step 1: Calculate precise rounded percentages using Double
+                    val percentages = categoryCount.mapValues {
+                        ((it.value.toDouble() * 100) / total).roundToInt()
+                    }.toMutableMap()
+
+                    // Step 2: Ensure the total is exactly 100% (fixes 99% or 101% rounding quirks)
+                    val currentSum = percentages.values.sum()
+                    if (currentSum != 100 && percentages.isNotEmpty()) {
+                        // Find the category with the largest percentage to absorb the 1% difference
+                        val maxCategory = percentages.maxByOrNull { it.value }?.key
+                        if (maxCategory != null) {
+                            percentages[maxCategory] = percentages[maxCategory]!! + (100 - currentSum)
+                        }
+                    }
+                    percentages
                 } else {
                     emptyMap()
                 }

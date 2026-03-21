@@ -1,5 +1,7 @@
 package com.university.campuscare.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -12,6 +14,7 @@ import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
 import androidx.compose.runtime.collectAsState
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CampusCareApp() {
     val navController = rememberNavController()

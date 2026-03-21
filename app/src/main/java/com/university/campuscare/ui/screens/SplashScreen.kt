@@ -38,7 +38,6 @@ fun SplashScreen(
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(key1 = true) {
-        startAnimation = true
         authViewModel.checkLoginStatus()
         delay(2500)
     }
