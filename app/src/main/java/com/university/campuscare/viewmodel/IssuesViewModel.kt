@@ -38,8 +38,7 @@ class IssuesViewModel : ViewModel() {
     val selectedFilter: StateFlow<IssueStatus?> = _selectedFilter.asStateFlow()
     
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-    
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
@@ -59,7 +58,7 @@ class IssuesViewModel : ViewModel() {
                         _isLoading.value = false
                     }
                     is DataResult.Error -> {
-                        _issuesState.value = IssuesState.Error(result.error.peekContent() ?: "Failed to load issues")
+                        _issuesState.value = IssuesState.Error(result.error.peekContent())
                         _isLoading.value = false
                     }
                     is DataResult.Loading -> {
@@ -77,10 +76,6 @@ class IssuesViewModel : ViewModel() {
 
     fun setFilter(status: IssueStatus?) {
         _selectedFilter.value = status
-    }
-    
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
     }
     
     fun getFilteredIssues(): List<Issue> {
@@ -117,7 +112,7 @@ class IssuesViewModel : ViewModel() {
 
                     is DataResult.Error -> {
                         _issuesState.value =
-                            IssuesState.Error(result.error.peekContent() ?: "Failed to load issue")
+                            IssuesState.Error(result.error.peekContent())
                         _isLoading.value = false
                     }
 

@@ -328,8 +328,6 @@ private fun AdminIssueCard(
     onDelete: () -> Unit,
     onClick: () -> Unit = {}
 ) {
-    var showOptions by remember { mutableStateOf(false) }
-
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(4.dp),

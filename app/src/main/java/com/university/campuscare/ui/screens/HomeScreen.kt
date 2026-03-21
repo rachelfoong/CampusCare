@@ -1,5 +1,7 @@
 package com.university.campuscare.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -18,16 +20,16 @@ import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
 
 sealed class BottomNavItem(
-    val route: String,
     val title: String,
     val icon: ImageVector
 ) {
-    object Home : BottomNavItem("home", "Home", Icons.Default.Home)
-    object Issues : BottomNavItem("issues", "Issues", Icons.AutoMirrored.Filled.Assignment)
-    object Alerts : BottomNavItem("alerts", "Alerts", Icons.Default.Notifications)
-    object Profile : BottomNavItem("profile", "Profile", Icons.Default.Person)
+    object Home : BottomNavItem("Home", Icons.Default.Home)
+    object Issues : BottomNavItem("Issues", Icons.AutoMirrored.Filled.Assignment)
+    object Alerts : BottomNavItem("Alerts", Icons.Default.Notifications)
+    object Profile : BottomNavItem("Profile", Icons.Default.Person)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -35,7 +37,6 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
     onNavigateToUserProfile: () -> Unit,
-    onNavigateToProfile: (String) -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     onNavigateToFacilitiesTeam: () -> Unit,

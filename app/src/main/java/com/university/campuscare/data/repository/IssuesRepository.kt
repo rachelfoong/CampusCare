@@ -22,7 +22,7 @@ interface IssuesRepository {
 }
 
 class IssuesRepositoryImpl(
-    private val firestore: FirebaseFirestore
+    firestore: FirebaseFirestore
 ) : IssuesRepository {
 
     private val issuesCollection = firestore.collection("reports")

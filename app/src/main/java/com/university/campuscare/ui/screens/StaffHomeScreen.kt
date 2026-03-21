@@ -1,5 +1,7 @@
 package com.university.campuscare.ui.screens
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -22,6 +24,7 @@ sealed class StaffBottomNavItem(val title: String, val icon: ImageVector) {
     object Profile : StaffBottomNavItem("Profile", Icons.Default.Person)
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StaffHomeScreen(

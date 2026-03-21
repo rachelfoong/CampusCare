@@ -77,6 +77,7 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 
 @Composable
 fun IssueCard(
+    modifier: Modifier = Modifier,
     title: String,
     status: String,
     date: String,
@@ -84,7 +85,6 @@ fun IssueCard(
     urgency: String? = null,
     onClick: () -> Unit,
     onChatClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
@@ -198,16 +198,16 @@ fun UrgencyChip(urgency: String) {
 
 @Composable
 fun AlertCard(
+    modifier: Modifier = Modifier,
     title: String,
     message: String,
     time: String,
     isRead: Boolean = true,
     onTap: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = { if (!isRead) onTap?.invoke() },
-        modifier = Modifier.fillMaxWidth().padding(4.dp),
+        modifier = modifier.fillMaxWidth().padding(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isRead) Color.White else Color(0xFFFFF3F3)
         ),

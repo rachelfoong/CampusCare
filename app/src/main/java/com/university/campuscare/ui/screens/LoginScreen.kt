@@ -143,7 +143,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = authState !is AuthState.Loading,
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor = androidx.compose.ui.graphics.Color(0xFFFF0000)
                 ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)

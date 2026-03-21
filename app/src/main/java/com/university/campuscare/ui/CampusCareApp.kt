@@ -121,9 +121,6 @@ fun CampusCareApp() {
                 onNavigateToUserProfile = {
                     navController.navigate(Screen.UserProfile.route)
                 },
-                onNavigateToProfile = { userId ->
-                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
-                },
                 onNavigateToChat = { issueId, issueTitle ->
                     navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
                 },
