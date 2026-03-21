@@ -13,56 +13,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.university.campuscare.ui.screens.tabs.AlertsTab
-import com.university.campuscare.ui.screens.tabs.HomeTab
 import com.university.campuscare.ui.screens.tabs.IssuesTab
 import com.university.campuscare.ui.screens.tabs.ProfileTab
 import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
 
-sealed class BottomNavItem(
-    val title: String,
-    val icon: ImageVector
-) {
-    object Home : BottomNavItem("Home", Icons.Default.Home)
-    object Issues : BottomNavItem("Issues", Icons.AutoMirrored.Filled.Assignment)
-    object Alerts : BottomNavItem("Alerts", Icons.Default.Notifications)
-    object Profile : BottomNavItem("Profile", Icons.Default.Person)
+sealed class StaffBottomNavItem(val title: String, val icon: ImageVector) {
+    object Tasks : StaffBottomNavItem("Tasks", Icons.AutoMirrored.Filled.Assignment)
+    object Alerts : StaffBottomNavItem("Alerts", Icons.Default.Notifications)
+    object Profile : StaffBottomNavItem("Profile", Icons.Default.Person)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    onNavigateToReportFault: (String?) -> Unit,
+fun StaffHomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
     onNavigateToUserProfile: () -> Unit,
+    onNavigateToFacilitiesTeam: () -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
-    onNavigateToFacilitiesTeam: () -> Unit,
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    
+
     val bottomNavItems = listOf(
-        BottomNavItem.Home,
-        BottomNavItem.Issues,
-        BottomNavItem.Alerts,
-        BottomNavItem.Profile
+        StaffBottomNavItem.Tasks,
+        StaffBottomNavItem.Alerts,
+        StaffBottomNavItem.Profile
     )
 
     val authState by authViewModel.authState.collectAsState()
-    val userName = if (authState is AuthState.Authenticated) (authState as AuthState.Authenticated).user.name else "User"
+    val userName = if (authState is AuthState.Authenticated) (authState as AuthState.Authenticated).user.name else "Staff"
     val userId = if (authState is AuthState.Authenticated) (authState as AuthState.Authenticated).user.userId else ""
-    val userRole = "STUDENT" // Hardcoded since only student arrive here
-
+    val userRole = "STAFF" // Hardcoded since only staff arrive here
 
     Scaffold(
         bottomBar = {
-            NavigationBar(
-                containerColor = Color.White
-            ) {
+            NavigationBar(containerColor = Color.White) {
                 bottomNavItems.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { Icon(item.icon, contentDescription = item.title) },
@@ -79,16 +69,12 @@ fun HomeScreen(
             }
         }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when (selectedTab) {
-                0 -> HomeTab(userName, userId, onNavigateToReportFault)
-                1 -> IssuesTab(userId, userRole, onNavigateToChat, onNavigateToIssueDetails)
-                2 -> AlertsTab(userId)
-                3 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam, onNavigateToUserProfile)
+                // Passes "STAFF" role down so IssuesTab searches the "assignedTo" field
+                0 -> IssuesTab(userId, userRole, onNavigateToChat, onNavigateToIssueDetails)
+                1 -> AlertsTab(userId)
+                2 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam, onNavigateToUserProfile)
             }
         }
     }

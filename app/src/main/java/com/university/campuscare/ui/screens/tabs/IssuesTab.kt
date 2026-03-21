@@ -14,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.ui.components.AdminFilterChip
 import com.university.campuscare.ui.components.IssueCard
 import com.university.campuscare.viewmodel.IssuesState
 import com.university.campuscare.viewmodel.IssuesViewModel
@@ -24,17 +26,19 @@ import java.util.Locale
 @Composable
 fun IssuesTab(
     userId: String,
+    userRole: String,
     onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     viewModel: IssuesViewModel = viewModel()
 ) {
-    val issues by viewModel.issues.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val issuesState by viewModel.issuesState.collectAsState()
+    val selectedFilter by viewModel.selectedFilter.collectAsState()
+    val filteredIssues = viewModel.getFilteredIssues()
 
-    LaunchedEffect(userId) {
-        Log.d("IssuesTab", "LaunchedEffect triggered with userId: $userId")
-        viewModel.loadIssues(userId)
+    LaunchedEffect(userId, userRole) {
+        Log.d("IssuesTab", "LaunchedEffect triggered with userId: $userId, role: $userRole")
+        viewModel.loadIssues(userId, userRole)
     }
 
     Column(
@@ -49,11 +53,38 @@ fun IssuesTab(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AdminFilterChip(
+                text = "All",
+                isSelected = selectedFilter == null,
+                onClick = { viewModel.setFilter(null) }
+            )
+            AdminFilterChip(
+                text = "Pending",
+                isSelected = selectedFilter == IssueStatus.PENDING,
+                onClick = { viewModel.setFilter(IssueStatus.PENDING) }
+            )
+            AdminFilterChip(
+                text = "In Progress",
+                isSelected = selectedFilter == IssueStatus.IN_PROGRESS,
+                onClick = { viewModel.setFilter(IssueStatus.IN_PROGRESS) }
+            )
+            AdminFilterChip(
+                text = "Resolved",
+                isSelected = selectedFilter == IssueStatus.RESOLVED,
+                onClick = { viewModel.setFilter(IssueStatus.RESOLVED) }
+            )
+        }
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (isLoading) {
-                Text(
-                    text = "Loading...",
-
+                CircularProgressIndicator(
+                    color = Color(0xFFFF0000),
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else if (issuesState is IssuesState.Error) {
@@ -62,18 +93,19 @@ fun IssuesTab(
                     color = Color.Red,
                     modifier = Modifier.align(Alignment.Center)
                 )
-            } else if (issues.isEmpty()) {
+            } else if (filteredIssues.isEmpty()) {
                 Text(
-                    text = "No issues found for user: $userId",
+                    text = if (selectedFilter == null) "No issues found" else "No ${selectedFilter?.name?.lowercase()?.replace("_", " ")} issues",
                     modifier = Modifier.align(Alignment.Center),
                     color = Color.Gray
                 )
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(issues) { issue ->
+                    items(filteredIssues) { issue ->
                         IssueCard(
                             title = issue.title,
                             status = issue.status.name,
@@ -82,7 +114,7 @@ fun IssuesTab(
                             location = issue.location.block,
                             urgency = issue.urgency.name,
                             onClick = { onNavigateToIssueDetails(issue.id) },
-                            onChatClick = if (issue.status == com.university.campuscare.data.model.IssueStatus.IN_PROGRESS) {
+                            onChatClick = if (issue.status == IssueStatus.IN_PROGRESS) {
                                 { onNavigateToChat(issue.id, issue.title) }
                             } else null
                         )

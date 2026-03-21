@@ -247,7 +247,8 @@ fun AdminDashboardScreen(
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(filteredIssues) { issue ->
                         AdminIssueCard(
@@ -327,11 +328,9 @@ private fun AdminIssueCard(
     onDelete: () -> Unit,
     onClick: () -> Unit = {}
 ) {
-    var showOptions by remember { mutableStateOf(false) }
-
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp)
@@ -342,7 +341,7 @@ private fun AdminIssueCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -355,21 +354,6 @@ private fun AdminIssueCard(
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
-                }
-                Box {
-                    IconButton(onClick = { showOptions = true }) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = Color.Gray
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showOptions,
-                        onDismissRequest = { showOptions = false }
-                    ) {
-                    // Add things in dropdownmenu if needed
-                    }
                 }
             }
 

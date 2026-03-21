@@ -23,7 +23,8 @@ fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToAdminHome: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToStaffHome: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -38,11 +39,11 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
-                val userRole = (authState as AuthState.Authenticated).user.role
-                if (userRole == "ADMIN") {
-                    onNavigateToAdminHome()
-                } else {
-                    onNavigateToHome()
+                val role = (authState as AuthState.Authenticated).user.role
+                when (role) {
+                    "ADMIN" -> onNavigateToAdminHome()
+                    "STAFF" -> onNavigateToStaffHome()
+                    else -> onNavigateToHome() // Defaults to STUDENT
                 }
             }
             else -> {}
@@ -142,7 +143,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = authState !is AuthState.Loading,
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor = androidx.compose.ui.graphics.Color(0xFFFF0000)
                 ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)

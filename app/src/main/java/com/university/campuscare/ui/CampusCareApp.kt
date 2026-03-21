@@ -1,5 +1,7 @@
 package com.university.campuscare.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -12,6 +14,7 @@ import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
 import androidx.compose.runtime.collectAsState
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CampusCareApp() {
     val navController = rememberNavController()
@@ -36,6 +39,11 @@ fun CampusCareApp() {
                 },
                 onNavigateToAdminHome = {
                     navController.navigate(Screen.AdminHome.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -64,6 +72,11 @@ fun CampusCareApp() {
                 },
                 onNavigateToAdminHome = {
                     navController.navigate(Screen.AdminHome.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -111,9 +124,6 @@ fun CampusCareApp() {
                 onNavigateToUserProfile = {
                     navController.navigate(Screen.UserProfile.route)
                 },
-                onNavigateToProfile = { userId ->
-                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
-                },
                 onNavigateToChat = { issueId, issueTitle ->
                     navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
                 },
@@ -146,6 +156,28 @@ fun CampusCareApp() {
                     navController.navigate(
                         Screen.Chat.createRoute(issueId, issueTitle)
                     )
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        composable(Screen.StaffHome.route) {
+            StaffHomeScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
+                onNavigateToUserProfile = { navController.navigate(Screen.UserProfile.route) },
+                onNavigateToFacilitiesTeam = { navController.navigate(Screen.FacilitiesTeam.route) },
+                onNavigateToChat = { issueId, issueTitle ->
+                    navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
+                },
+                onNavigateToIssueDetails = { issueId ->
+                    navController.navigate(Screen.IssueDetail.createRoute(issueId))
+                },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 },
                 authViewModel = authViewModel
             )

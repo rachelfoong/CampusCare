@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -26,7 +25,8 @@ fun SplashScreen(
     authViewModel: AuthViewModel,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToAdminHome: () -> Unit
+    onNavigateToAdminHome: () -> Unit,
+    onNavigateToStaffHome: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim = animateFloatAsState(
@@ -38,7 +38,6 @@ fun SplashScreen(
     val authState by authViewModel.authState.collectAsState()
 
     LaunchedEffect(key1 = true) {
-        startAnimation = true
         authViewModel.checkLoginStatus()
         delay(2500)
     }
@@ -48,6 +47,7 @@ fun SplashScreen(
             val user = (authState as AuthState.Authenticated).user
             when (user.role) {
                 "ADMIN" -> onNavigateToAdminHome()
+                "STAFF" -> onNavigateToStaffHome()
                 else -> onNavigateToHome()
             }
         } else if (authState is AuthState.Idle || authState is AuthState.Error) {

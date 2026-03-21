@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -77,10 +76,21 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String, urgency: String? = null, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
+fun IssueCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    status: String,
+    date: String,
+    location: String,
+    urgency: String? = null,
+    onClick: () -> Unit,
+    onChatClick: (() -> Unit)? = null,
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp)
@@ -90,7 +100,8 @@ fun IssueCard(title: String, status: String, date: String, location: String, urg
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = title,
@@ -161,29 +172,6 @@ fun StatusChip(status: String) {
     }
 }
 
-//@Composable
-//fun StatusChip(status: String) {
-//    val color = when (status) {
-//        "PENDING" -> MaterialTheme.colorScheme.error
-//        "IN_PROGRESS" -> MaterialTheme.colorScheme.tertiary
-//        "RESOLVED" -> MaterialTheme.colorScheme.primary
-//        else -> MaterialTheme.colorScheme.secondary
-//    }
-//
-//    Surface(
-//        color = color.copy(alpha = 0.2f),
-//        shape = MaterialTheme.shapes.small
-//    ) {
-//        Text(
-//            text = status.replace("_", " "),
-//            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-//            fontSize = 12.sp,
-//            color = color,
-//            fontWeight = FontWeight.Medium
-//        )
-//    }
-//}
-
 @Composable
 fun UrgencyChip(urgency: String) {
     val (backgroundColor, textColor) = when (urgency) {
@@ -210,15 +198,16 @@ fun UrgencyChip(urgency: String) {
 
 @Composable
 fun AlertCard(
+    modifier: Modifier = Modifier,
     title: String,
     message: String,
     time: String,
     isRead: Boolean = true,
-    onTap: (() -> Unit)? = null
+    onTap: (() -> Unit)? = null,
 ) {
     Card(
         onClick = { if (!isRead) onTap?.invoke() },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(4.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isRead) Color.White else Color(0xFFFFF3F3)
         ),

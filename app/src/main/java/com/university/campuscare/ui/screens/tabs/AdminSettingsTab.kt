@@ -52,7 +52,7 @@ fun AdminSettingsTab(userName: String, onLogout: () -> Unit, navController: NavC
         SettingsOption(Icons.Default.Person, "Edit Profile") {
             navController.navigate(Screen.UserProfile.route)
         }
-        SettingsOption(Icons.Default.Notifications, "Settings") {
+        SettingsOption(Icons.Default.Settings, "Settings") {
             navController.navigate(Screen.Settings.route)
         }
         SettingsOption(Icons.Default.Info, "Help & Support") {
