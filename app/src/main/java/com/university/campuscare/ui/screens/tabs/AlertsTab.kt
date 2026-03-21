@@ -32,6 +32,7 @@ private fun formatTimestamp(milliseconds: Long): String {
     return formatter.format(Instant.ofEpochMilli(milliseconds))
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlertsTab(userId: String, viewModel: NotificationsViewModel = viewModel()) {
