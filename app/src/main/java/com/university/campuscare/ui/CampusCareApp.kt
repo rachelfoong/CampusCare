@@ -272,10 +272,11 @@ fun CampusCareApp() {
         ) { backStackEntry ->
             val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
             val authState = authViewModel.authState.collectAsState().value
-            val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
+            val role = (authState as? AuthState.Authenticated)?.user?.role ?: "STUDENT"
             IssueDetailScreen(
                 issueId = issueId,
-                isAdmin = isAdmin,
+                isAdmin = role == "ADMIN",
+                isStaff = role == "STAFF",
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToChat = { id, title ->
                     navController.navigate(Screen.Chat.createRoute(id, title))

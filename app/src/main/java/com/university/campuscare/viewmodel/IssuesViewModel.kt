@@ -20,10 +20,6 @@ sealed class IssuesState {
     data class Error(val message: String) : IssuesState()
 }
 
-// TODO FOR ISSUES:
-// Note - IssuesTab.kt is currently used for the issues tab UI, not MyIssuesScreen!
-// Tap on each issue to open its detailed view
-// Button for easy access to the corresponding chat
 class IssuesViewModel : ViewModel() {
     private val _issuesState = MutableStateFlow<IssuesState>(IssuesState.Idle)
     val issuesState: StateFlow<IssuesState> = _issuesState.asStateFlow()
@@ -125,6 +121,26 @@ class IssuesViewModel : ViewModel() {
                         _issuesState.value = IssuesState.Idle
                         _isLoading.value = false
                     }
+                }
+            }
+        }
+    }
+
+    fun resolveIssue(issueId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            // Update the status to RESOLVED in Firestore
+            issuesRepository.updateIssueStatus(issueId, IssueStatus.RESOLVED).collect { result ->
+                when (result) {
+                    is DataResult.Success -> {
+                        // The SnapshotListener in loadIssues will automatically refresh the list
+                        _isLoading.value = false
+                    }
+                    is DataResult.Error -> {
+                        _issuesState.value = IssuesState.Error(result.error.peekContent())
+                        _isLoading.value = false
+                    }
+                    else -> {}
                 }
             }
         }

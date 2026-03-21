@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.university.campuscare.viewmodel.AuthState
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AdminViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

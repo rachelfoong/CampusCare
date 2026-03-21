@@ -474,7 +474,7 @@ private fun AdminIssueCard(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Resolved", fontSize = 13.sp)
+                                Text("Resolve", fontSize = 13.sp)
                             }
                         }
                     }
