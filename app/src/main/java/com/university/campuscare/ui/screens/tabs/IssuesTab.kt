@@ -116,6 +116,9 @@ fun IssuesTab(
                             onClick = { onNavigateToIssueDetails(issue.id) },
                             onChatClick = if (issue.status == IssueStatus.IN_PROGRESS) {
                                 { onNavigateToChat(issue.id, issue.title) }
+                            } else null,
+                            onResolveClick = if (userRole == "STAFF" && issue.status == IssueStatus.IN_PROGRESS) {
+                                { viewModel.resolveIssue(issue.id) }
                             } else null
                         )
                     }

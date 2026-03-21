@@ -1,10 +1,12 @@
 package com.university.campuscare.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,7 +16,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 @Composable
 fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
@@ -77,7 +78,6 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 
 @Composable
 fun IssueCard(
-    modifier: Modifier = Modifier,
     title: String,
     status: String,
     date: String,
@@ -85,6 +85,8 @@ fun IssueCard(
     urgency: String? = null,
     onClick: () -> Unit,
     onChatClick: (() -> Unit)? = null,
+    onResolveClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
@@ -133,21 +135,46 @@ fun IssueCard(
                 )
             }
 
-            if (onChatClick != null) {
+            if (onChatClick != null || onResolveClick != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = onChatClick,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFF0000)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Chat")
+                    if (onChatClick != null) {
+                        OutlinedButton(
+                            onClick = onChatClick,
+                            modifier = if (onResolveClick != null) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF0000)),
+                            border = BorderStroke(1.dp, Color(0xFFFF0000))
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = "Chat",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chat")
+                        }
+                    }
+                    if (onResolveClick != null) {
+                        Button(
+                            onClick = onResolveClick,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Resolve",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Resolve")
+                        }
+                    }
                 }
             }
         }
-
     }
 }
 
