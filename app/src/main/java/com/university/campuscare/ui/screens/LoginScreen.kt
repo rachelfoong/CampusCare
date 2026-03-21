@@ -23,7 +23,8 @@ fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToAdminHome: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToStaffHome: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -38,11 +39,11 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
-                val userRole = (authState as AuthState.Authenticated).user.role
-                if (userRole == "ADMIN") {
-                    onNavigateToAdminHome()
-                } else {
-                    onNavigateToHome()
+                val role = (authState as AuthState.Authenticated).user.role
+                when (role) {
+                    "ADMIN" -> onNavigateToAdminHome()
+                    "STAFF" -> onNavigateToStaffHome()
+                    else -> onNavigateToHome() // Defaults to STUDENT
                 }
             }
             else -> {}

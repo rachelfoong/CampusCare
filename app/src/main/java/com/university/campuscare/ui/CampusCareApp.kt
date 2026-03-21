@@ -38,6 +38,11 @@ fun CampusCareApp() {
                     navController.navigate(Screen.AdminHome.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
                 }
             )
         }
@@ -64,6 +69,11 @@ fun CampusCareApp() {
                 },
                 onNavigateToAdminHome = {
                     navController.navigate(Screen.AdminHome.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -146,6 +156,28 @@ fun CampusCareApp() {
                     navController.navigate(
                         Screen.Chat.createRoute(issueId, issueTitle)
                     )
+                },
+                authViewModel = authViewModel
+            )
+        }
+
+        composable(Screen.StaffHome.route) {
+            StaffHomeScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
+                onNavigateToUserProfile = { navController.navigate(Screen.UserProfile.route) },
+                onNavigateToFacilitiesTeam = { navController.navigate(Screen.FacilitiesTeam.route) },
+                onNavigateToChat = { issueId, issueTitle ->
+                    navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
+                },
+                onNavigateToIssueDetails = { issueId ->
+                    navController.navigate(Screen.IssueDetail.createRoute(issueId))
+                },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 },
                 authViewModel = authViewModel
             )

@@ -26,6 +26,7 @@ import java.util.Locale
 @Composable
 fun IssuesTab(
     userId: String,
+    userRole: String,
     onNavigateToChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     viewModel: IssuesViewModel = viewModel()
@@ -35,9 +36,9 @@ fun IssuesTab(
     val selectedFilter by viewModel.selectedFilter.collectAsState()
     val filteredIssues = viewModel.getFilteredIssues()
 
-    LaunchedEffect(userId) {
-        Log.d("IssuesTab", "LaunchedEffect triggered with userId: $userId")
-        viewModel.loadIssues(userId)
+    LaunchedEffect(userId, userRole) {
+        Log.d("IssuesTab", "LaunchedEffect triggered with userId: $userId, role: $userRole")
+        viewModel.loadIssues(userId, userRole)
     }
 
     Column(
@@ -100,7 +101,8 @@ fun IssuesTab(
                 )
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredIssues) { issue ->

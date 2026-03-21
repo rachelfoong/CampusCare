@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.*
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,7 +88,10 @@ fun AlertsTab(userId: String, viewModel: NotificationsViewModel = viewModel()) {
                 }
             }
             else -> {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
                     items(notifications, key = { it.id }) { notification ->
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
@@ -104,6 +108,7 @@ fun AlertsTab(userId: String, viewModel: NotificationsViewModel = viewModel()) {
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
+                                        .padding(4.dp)
                                         .background(
                                             Color(0xFFFF5252),
                                             shape = MaterialTheme.shapes.medium

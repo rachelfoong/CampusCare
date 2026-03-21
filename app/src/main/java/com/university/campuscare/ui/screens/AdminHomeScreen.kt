@@ -15,6 +15,7 @@ import androidx.navigation.NavController
 import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.ui.screens.tabs.*
+import com.university.campuscare.viewmodel.AuthState
 
 sealed class AdminBottomNavItem(
     val title: String,
@@ -47,11 +48,7 @@ fun AdminHomeScreen(
     )
 
     val authState by authViewModel.authState.collectAsState()
-    val userName = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
-        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.name
-    } else {
-        "Admin"
-    }
+    val userName = if (authState is AuthState.Authenticated) (authState as AuthState.Authenticated).user.name else "Admin"
 
     Scaffold(
         bottomBar = {

@@ -15,7 +15,7 @@ import kotlinx.coroutines.tasks.await
 
 interface IssuesRepository {
     suspend fun submitIssue(issue: Issue): Flow<DataResult<String>>
-    fun getMyIssues(userId: String): Flow<DataResult<List<Issue>>>
+    fun getMyIssues(userId: String , role: String): Flow<DataResult<List<Issue>>>
     fun getAllIssues(): Flow<DataResult<List<Issue>>>
     suspend fun updateIssueStatus(issueId: String, status: IssueStatus): Flow<DataResult<Boolean>>
     suspend fun getIssueById(issueId: String): Flow<DataResult<Issue>>
@@ -48,12 +48,14 @@ class IssuesRepositoryImpl(
     }
 
     // Get a user's issues from firebase
-    override fun getMyIssues(userId: String): Flow<DataResult<List<Issue>>> = callbackFlow {
+    override fun getMyIssues(userId: String, role: String): Flow<DataResult<List<Issue>>> = callbackFlow {
         trySend(DataResult.Loading)
         Log.d("IssuesRepository", "Starting query for userId: $userId from reports collection")
-        
+
+        val queryField = if (role == "STAFF") "assignedTo" else "reportedBy"
+
         val query = issuesCollection
-            .whereEqualTo("reportedBy", userId)
+            .whereEqualTo(queryField, userId)
 
         val subscription = query.addSnapshotListener { snapshot, error ->
             if (error != null) {

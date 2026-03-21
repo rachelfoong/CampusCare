@@ -46,12 +46,12 @@ class IssuesViewModel : ViewModel() {
     private var loadIssuesJob: Job? = null
 
     // Load all issues for the user
-    fun loadIssues(userId: String? = null) {
+    fun loadIssues(userId: String? = null, role: String = "STUDENT") {
         if (userId.isNullOrEmpty()) return
 
         loadIssuesJob?.cancel()
         loadIssuesJob = viewModelScope.launch {
-            issuesRepository.getMyIssues(userId).collect { result ->
+            issuesRepository.getMyIssues(userId, role).collect { result ->
                 when(result) {
                     is DataResult.Success -> {
                         _issues.value = result.data
