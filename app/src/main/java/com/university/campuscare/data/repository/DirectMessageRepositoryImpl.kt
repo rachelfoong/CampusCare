@@ -40,7 +40,7 @@ class DirectMessageRepositoryImpl(
                     trySend(DataResult.Error(Event(e.message ?: "Failed to load messages")))
                     return@addSnapshotListener
                 }
-                
+
                 if (snapshot != null) {
                     val messages = snapshot.documents.mapNotNull { doc ->
                         DirectMessage(
@@ -55,7 +55,7 @@ class DirectMessageRepositoryImpl(
                     trySend(DataResult.Success(messages))
                 }
             }
-        
+
         awaitClose { listener.remove() }
     }
 
@@ -68,16 +68,18 @@ class DirectMessageRepositoryImpl(
                 "message" to message.message,
                 "timestamp" to message.timestamp
             )
-            
+
             firestore.collection("direct_messages")
                 .document(conversationId)
                 .collection("messages")
                 .add(messageData)
                 .await()
-            
+
             DataResult.Success(Unit)
         } catch (e: Exception) {
             DataResult.Error(Event(e.message ?: "Failed to send message"))
         }
     }
 }
+
+

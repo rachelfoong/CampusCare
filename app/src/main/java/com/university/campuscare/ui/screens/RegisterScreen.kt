@@ -30,8 +30,6 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("STUDENT") }
-    var roleDropdownExpanded by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var showSuccessToast by remember { mutableStateOf(false) }
@@ -100,46 +98,6 @@ fun RegisterScreen(
                 singleLine = true,
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ExposedDropdownMenuBox(
-                expanded = roleDropdownExpanded,
-                onExpandedChange = { roleDropdownExpanded = !roleDropdownExpanded }
-            ) {
-                OutlinedTextField(
-                    value = if (selectedRole == "STUDENT") "Student" else "Staff",
-                    onValueChange = {},
-                    readOnly = true,
-                    placeholder = { Text("Select Role") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = roleDropdownExpanded)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                )
-                ExposedDropdownMenu(
-                    expanded = roleDropdownExpanded,
-                    onDismissRequest = { roleDropdownExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Student") },
-                        onClick = {
-                            selectedRole = "STUDENT"
-                            roleDropdownExpanded = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Staff") },
-                        onClick = {
-                            selectedRole = "STAFF"
-                            roleDropdownExpanded = false
-                        }
-                    )
-                }
-            }
             
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -227,7 +185,7 @@ fun RegisterScreen(
             // Sign Up button
             Button(
                 onClick = {
-                    authViewModel.register(name, email, password, confirmPassword, "", selectedRole)
+                    authViewModel.register(name, email, password, confirmPassword, "", "STUDENT")
                 },
                 modifier = Modifier
                     .fillMaxWidth()

@@ -1,10 +1,12 @@
 package com.university.campuscare.ui.components
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -14,7 +16,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 @Composable
 fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
@@ -76,10 +77,22 @@ fun FacilityCard(icon: String, title: String, onClick: () -> Unit, modifier: Mod
 }
 
 @Composable
-fun IssueCard(title: String, status: String, date: String, location: String, onClick: () -> Unit, onChatClick: (() -> Unit)? = null) {
+fun IssueCard(
+    title: String,
+    status: String,
+    date: String,
+    location: String,
+    urgency: String? = null,
+    onClick: () -> Unit,
+    onChatClick: (() -> Unit)? = null,
+    onResolveClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp)
@@ -89,14 +102,21 @@ fun IssueCard(title: String, status: String, date: String, location: String, onC
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
                 )
-                StatusChip(status)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (urgency != null) {
+                        UrgencyChip(urgency)
+                    }
+                    StatusChip(status)
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -115,21 +135,46 @@ fun IssueCard(title: String, status: String, date: String, location: String, onC
                 )
             }
 
-            if (onChatClick != null) {
+            if (onChatClick != null || onResolveClick != null) {
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = onChatClick,
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFF0000)
-                    ),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFF0000))
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Chat")
+                    if (onChatClick != null) {
+                        OutlinedButton(
+                            onClick = onChatClick,
+                            modifier = if (onResolveClick != null) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFF0000)),
+                            border = BorderStroke(1.dp, Color(0xFFFF0000))
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = "Chat",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Chat")
+                        }
+                    }
+                    if (onResolveClick != null) {
+                        Button(
+                            onClick = onResolveClick,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = "Resolve",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Resolve")
+                        }
+                    }
                 }
             }
         }
-
     }
 }
 
@@ -146,7 +191,7 @@ fun StatusChip(status: String) {
         shape = RoundedCornerShape(12.dp)
     ) {
         Text(
-            text = if (status == "IN_PROGRESS") "IN PROGRESS" else status,
+            text = status.replace("_", " "),
             color = textColor,
             fontSize = 12.sp,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -155,30 +200,75 @@ fun StatusChip(status: String) {
 }
 
 @Composable
-fun AlertCard(title: String, message: String, time: String) {
+fun UrgencyChip(urgency: String) {
+    val (backgroundColor, textColor) = when (urgency) {
+        "CRITICAL" -> Color(0xFFD32F2F) to Color.White
+        "HIGH" -> Color(0xFFEF5350) to Color.White
+        "MEDIUM" -> Color(0xFFFFA726) to Color.White
+        "LOW" -> Color(0xFF4CAF50) to Color.White
+        else -> Color(0xFFE0E0E0) to Color.Black
+    }
+    
+    Surface(
+        color = backgroundColor,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Text(
+            text = urgency,
+            color = textColor,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun AlertCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    message: String,
+    time: String,
+    isRead: Boolean = true,
+    onTap: (() -> Unit)? = null,
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        onClick = { if (!isRead) onTap?.invoke() },
+        modifier = modifier.fillMaxWidth().padding(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isRead) Color.White else Color(0xFFFFF3F3)
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Default.Notifications,
-                contentDescription = null,
-                tint = Color(0xFFFF0000),
-                modifier = Modifier.size(40.dp)
-            )
+            Box {
+                Icon(
+                    Icons.Default.Notifications,
+                    contentDescription = null,
+                    tint = Color(0xFFFF0000),
+                    modifier = Modifier.size(40.dp)
+                )
+                if (!isRead) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .align(Alignment.TopEnd)
+                            .background(Color(0xFFFF0000), shape = RoundedCornerShape(50))
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = if (isRead) FontWeight.Normal else FontWeight.Bold
                 )
                 Text(
                     text = message,
@@ -189,6 +279,15 @@ fun AlertCard(title: String, message: String, time: String) {
                     text = time,
                     fontSize = 12.sp,
                     color = Color.LightGray
+                )
+            }
+            if (!isRead) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "NEW",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFF0000)
                 )
             }
         }
@@ -230,4 +329,21 @@ fun ProfileOption(icon: ImageVector, title: String, onClick: () -> Unit = {}) {
             )
         }
     }
+}
+
+@Composable
+fun AdminFilterChip(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    FilterChip(
+        selected = isSelected,
+        onClick = onClick,
+        label = { Text(text) },
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    )
 }

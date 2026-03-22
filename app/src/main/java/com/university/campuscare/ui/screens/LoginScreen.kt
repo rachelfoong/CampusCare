@@ -23,12 +23,12 @@ fun LoginScreen(
     onNavigateToHome: () -> Unit,
     onNavigateToAdminHome: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToStaffHome: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var showSuccessToast by remember { mutableStateOf(false) }
 
     val authState by authViewModel.authState.collectAsState()
 
@@ -39,13 +39,11 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (authState) {
             is AuthState.Authenticated -> {
-                showSuccessToast = true
-                val userRole = (authState as AuthState.Authenticated).user.role
-                kotlinx.coroutines.delay(500)
-                if (userRole == "ADMIN") {
-                    onNavigateToAdminHome()
-                } else {
-                    onNavigateToHome()
+                val role = (authState as AuthState.Authenticated).user.role
+                when (role) {
+                    "ADMIN" -> onNavigateToAdminHome()
+                    "STAFF" -> onNavigateToStaffHome()
+                    else -> onNavigateToHome() // Defaults to STUDENT
                 }
             }
             else -> {}
@@ -145,7 +143,7 @@ fun LoginScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 enabled = authState !is AuthState.Loading,
-                colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                colors = ButtonDefaults.buttonColors(
                     containerColor = androidx.compose.ui.graphics.Color(0xFFFF0000)
                 ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
@@ -193,22 +191,6 @@ fun LoginScreen(
                     color = androidx.compose.ui.graphics.Color(0xFFFF0000),
                     fontSize = 14.sp
                 )
-            }
-
-            if (showSuccessToast) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = androidx.compose.ui.graphics.Color(0xFF4CAF50),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Login successful!",
-                        modifier = Modifier.padding(16.dp),
-                        color = androidx.compose.ui.graphics.Color.White,
-                        fontSize = 14.sp
-                    )
-                }
             }
         }
     }

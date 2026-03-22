@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,20 +17,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.ui.components.StatusChip
+import com.university.campuscare.ui.components.UrgencyChip
+import com.university.campuscare.ui.components.AssignStaffDialog
+import com.university.campuscare.ui.components.AdminFilterChip
+import com.university.campuscare.ui.Screen
 import com.university.campuscare.viewmodel.AdminViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.material.icons.automirrored.filled.Chat
-import com.university.campuscare.ui.components.AssignStaffDialog
-import androidx.navigation.NavController
-import com.university.campuscare.ui.Screen
 
 @Composable
 fun AdminDashboardScreen(
     navController: NavController,
+    userName: String,
     onNavigateToChat: (String, String) -> Unit = { _, _ -> },
     viewModel: AdminViewModel = viewModel()
 ) {
@@ -64,6 +67,12 @@ fun AdminDashboardScreen(
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
+                )
+
+                Text(
+                    text = "Welcome, $userName",
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.9f)
                 )
                 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -238,7 +247,8 @@ fun AdminDashboardScreen(
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(filteredIssues) { issue ->
                         AdminIssueCard(
@@ -318,11 +328,9 @@ private fun AdminIssueCard(
     onDelete: () -> Unit,
     onClick: () -> Unit = {}
 ) {
-    var showOptions by remember { mutableStateOf(false) }
-
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(4.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(8.dp)
@@ -333,7 +341,7 @@ private fun AdminIssueCard(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -347,21 +355,6 @@ private fun AdminIssueCard(
                         color = Color.Gray
                     )
                 }
-                Box {
-                    IconButton(onClick = { showOptions = true }) {
-                        Icon(
-                            Icons.Default.MoreVert,
-                            contentDescription = "Options",
-                            tint = Color.Gray
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = showOptions,
-                        onDismissRequest = { showOptions = false }
-                    ) {
-                    // Add things in dropdownmenu if needed
-                    }
-                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -370,6 +363,7 @@ private fun AdminIssueCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatusChip(status = issue.status.name.replace("_", " "))
+                UrgencyChip(urgency = issue.urgency.name)
                 Surface(
                     color = Color(0xFFF5F5F5),
                     shape = RoundedCornerShape(12.dp)
@@ -480,7 +474,7 @@ private fun AdminIssueCard(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("Resolved", fontSize = 13.sp)
+                                Text("Resolve", fontSize = 13.sp)
                             }
                         }
                     }

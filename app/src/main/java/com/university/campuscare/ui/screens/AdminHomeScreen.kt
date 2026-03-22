@@ -1,37 +1,33 @@
 package com.university.campuscare.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.viewmodel.AuthViewModel
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import com.university.campuscare.ui.screens.tabs.*
+import com.university.campuscare.viewmodel.AuthState
 
 sealed class AdminBottomNavItem(
     val title: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 ) {
-    object Dashboard : AdminBottomNavItem("Dashboard", Icons.Default.Home)
+    object Dashboard : AdminBottomNavItem("Dashboard", Icons.Default.Dashboard)
     object AllReports : AdminBottomNavItem("Reports", Icons.Default.CheckCircle)
-    object Analytics : AdminBottomNavItem("Analytics", Icons.Default.CheckCircle)
-    object Users : AdminBottomNavItem("Users", Icons.Default.AccountCircle)
+    object Analytics : AdminBottomNavItem("Analytics", Icons.Default.BarChart)
+    object Users : AdminBottomNavItem("Users", Icons.Default.Group)
+    object StaffMgmt : AdminBottomNavItem("Staff", Icons.Default.Engineering)
     object Recordings : AdminBottomNavItem("Recordings", Icons.Default.Videocam)
     object Settings : AdminBottomNavItem("Settings", Icons.Default.Settings)
 }
@@ -45,59 +41,26 @@ fun AdminHomeScreen(
     authViewModel: AuthViewModel,
     viewModel: AdminViewModel = viewModel(),
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var showMenu by remember { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     val bottomNavItems = listOf(
         AdminBottomNavItem.Dashboard,
         AdminBottomNavItem.AllReports,
         AdminBottomNavItem.Analytics,
         AdminBottomNavItem.Users,
-        AdminBottomNavItem.Recordings,
+        AdminBottomNavItem.StaffMgmt,
+        AdminBottomNavItem.Recordings, 
         AdminBottomNavItem.Settings
     )
 
     val authState by authViewModel.authState.collectAsState()
-    val userName = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
-        (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.name
-    } else {
-        "Admin"
-    }
+    val userName = if (authState is AuthState.Authenticated) (authState as AuthState.Authenticated).user.name else "Admin"
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Column {
-                        Text("Admin Panel", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text("Welcome, $userName", fontSize = 12.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.secondary
-                ),
-                actions = {
-                    IconButton(onClick = { showMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = "Menu")
-                    }
-                    DropdownMenu(
-                        expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Logout") },
-                            onClick = {
-                                showMenu = false
-                                onLogout()
-                            },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ExitToApp, null) }
-                        )
-                    }
-                }
-            )
-        },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = Color.White
+            ) {
                 bottomNavItems.forEachIndexed { index, item ->
                     NavigationBarItem(
                         icon = { 
@@ -109,7 +72,12 @@ fun AdminHomeScreen(
                         },
                         label = { Text(item.title, fontSize = 11.sp) },
                         selected = selectedTab == index,
-                        onClick = { selectedTab = index }
+                        onClick = { selectedTab = index },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFFF0000),
+                            selectedTextColor = Color(0xFFFF0000),
+                            indicatorColor = Color(0xFFFFEBEB)
+                        )
                     )
                 }
             }
@@ -121,12 +89,13 @@ fun AdminHomeScreen(
                 .padding(paddingValues)
         ) {
             when (selectedTab) {
-                0 -> AdminDashboardScreen(navController, onNavigateToChat, viewModel)
+                0 -> AdminDashboardScreen(navController, userName, onNavigateToChat, viewModel)
                 1 -> AdminReportsTab(viewModel)
                 2 -> AdminAnalyticsTab(viewModel)
                 3 -> AdminUsersTab(viewModel)
-                4 -> AdminRecordingsTab(viewModel)
-                5 -> AdminSettingsTab(userName, onLogout)
+                4 -> StaffManagementTab(viewModel, authViewModel)
+                5 -> AdminRecordingsTab(viewModel)
+                6 -> AdminSettingsTab(userName, onLogout, navController)
             }
         }
     }
@@ -577,7 +546,7 @@ private fun DeviceCard(
 }
 
 @Composable
-fun AdminSettingsTab(userName: String, onLogout: () -> Unit) {
+fun AdminSettingsTab(userName: String, onLogout: () -> Unit, navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()

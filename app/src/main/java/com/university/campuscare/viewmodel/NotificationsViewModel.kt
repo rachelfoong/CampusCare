@@ -12,12 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// TODO FOR NOTIFICATIONS:
-// Note - AlertsTab.kt is currently used for the notifications UI, not NotificationsScreen!
-// Delete a notification from the UI
-// Delete ALL notifications from the UI
-// Mark individual notifications as read from the UI
-// Mark ALL notifications as read from the UI
+// AlertsTab.kt is used for the notifications UI, not NotificationsScreen
 class NotificationsViewModel : ViewModel() {
     private val _notifications = MutableStateFlow<List<Notification>>(emptyList())
     val notifications: StateFlow<List<Notification>> = _notifications.asStateFlow()
@@ -60,14 +55,14 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-    // Mark a notification as read - TODO in the UI
+    // Mark a notification as read
     fun markAsRead(userId: String, notificationId: String) {
         viewModelScope.launch {
             try {
                 notificationRepository.markAsRead(userId, notificationId).collect { result ->
                     if (result is DataResult.Success) {
                         _notifications.value = _notifications.value.map {
-                            if (it.id == notificationId) it.copy(isRead = true) else it
+                            if (it.id == notificationId) it.copy(read = true) else it
                         }
                     } else if (result is DataResult.Error) {
                         Log.e("NotificationsViewModel", "Error marking notification as read: ${result.error.peekContent()}")
@@ -79,13 +74,13 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-    // Mark all notifications as read - TODO in the UI
+    // Mark all notifications as read
     fun markAllAsRead(userId: String) {
         viewModelScope.launch {
             try {
                 notificationRepository.markAllAsReadForUser(userId).collect { result ->
                     if (result is DataResult.Success) {
-                        _notifications.value = _notifications.value.map { it.copy(isRead = true) }
+                        _notifications.value = _notifications.value.map { it.copy(read = true) }
                     } else if (result is DataResult.Error) {
                         Log.e("NotificationsViewModel", "Error marking all notifications as read: ${result.error.peekContent()}")
                     }
@@ -96,7 +91,7 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-    // Delete a notification - TODO in the UI
+    // Delete a notification
     fun deleteNotification(userId: String, notificationId: String) {
         viewModelScope.launch {
             try {
@@ -113,7 +108,7 @@ class NotificationsViewModel : ViewModel() {
         }
     }
 
-    // Delete all notifications for a user - TODO in the UI
+    // Delete all notifications for a user
     fun deleteAllNotifications(userId: String) {
         viewModelScope.launch {
             try {

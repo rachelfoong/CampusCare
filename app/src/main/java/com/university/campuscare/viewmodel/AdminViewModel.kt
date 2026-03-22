@@ -7,6 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.data.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ import com.university.campuscare.data.model.Notification
 import com.university.campuscare.data.model.NotificationType
 import kotlinx.coroutines.tasks.await
 import java.util.Calendar
+import kotlin.math.roundToInt
 
 data class AdminStats(
     val total: Int = 0,
@@ -56,6 +58,10 @@ class AdminViewModel : ViewModel() {
 
     private val _selectedCategory = MutableStateFlow<IssueCategory?>(null)
     val selectedCategory: StateFlow<IssueCategory?> = _selectedCategory.asStateFlow()
+    
+    private val _selectedUrgency = MutableStateFlow<IssueUrgency?>(null)
+    @Suppress("unused")
+    val selectedUrgency: StateFlow<IssueUrgency?> = _selectedUrgency.asStateFlow()
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -70,7 +76,8 @@ class AdminViewModel : ViewModel() {
     // Loading state for staff
     private val _isLoadingStaff = MutableStateFlow(false)
     val isLoadingStaff: StateFlow<Boolean> = _isLoadingStaff.asStateFlow()
-    
+
+
     init {
         loadAllIssues()
         loadAllUsers()
@@ -129,6 +136,8 @@ class AdminViewModel : ViewModel() {
 
                 _staffList.value = staff
                 Log.d("AdminViewModel", "Loaded ${staff.size} staff members")
+
+                // compute hierarchy after staff list is available so dashboard can show data immediately
             } catch (e: Exception) {
                 Log.e("AdminViewModel", "Error loading staff: ${e.message}")
                 _staffList.value = emptyList()
@@ -150,6 +159,9 @@ class AdminViewModel : ViewModel() {
 
         // Calculate analytics whenever stats are updated
         calculateAnalytics()  // ← ADD THIS LINE
+
+        // Recompute staff hierarchy when issue set changes (admin dashboard open / data refresh)
+
     }
 
     fun calculateAnalytics() {
@@ -157,7 +169,7 @@ class AdminViewModel : ViewModel() {
             try {
                 val issues = _allIssues.value
 
-                // 1. Total Reports This Month
+                // Total Reports This Month
                 val calendar = Calendar.getInstance()
                 val currentMonth = calendar.get(Calendar.MONTH)
                 val currentYear = calendar.get(Calendar.YEAR)
@@ -170,7 +182,7 @@ class AdminViewModel : ViewModel() {
                             issueCalendar.get(Calendar.YEAR) == currentYear
                 }
 
-                // 2. Average Resolution Time
+                // Average Resolution Time
                 val resolvedIssues = issues.filter { it.status == IssueStatus.RESOLVED }
                 val averageResolutionTimeMillis = if (resolvedIssues.isNotEmpty()) {
                     resolvedIssues.map { it.updatedAt - it.createdAt }.average()
@@ -184,15 +196,29 @@ class AdminViewModel : ViewModel() {
                     "< 1 day"
                 }
 
-                // 4. Most Reported Issue Category
+                // Most Reported Issue Category
                 val categoryCount = issues.groupBy { it.category }
                     .mapValues { it.value.size }
                 val mostReportedCategory = categoryCount.maxByOrNull { it.value }?.key ?: "None"
 
-                // 5. Category Breakdown with Percentages
+                // Category Breakdown with Percentages
                 val total = issues.size
                 val categoryBreakdown = if (total > 0) {
-                    categoryCount.mapValues { (it.value * 100) / total }
+                    // Step 1: Calculate precise rounded percentages using Double
+                    val percentages = categoryCount.mapValues {
+                        ((it.value.toDouble() * 100) / total).roundToInt()
+                    }.toMutableMap()
+
+                    // Step 2: Ensure the total is exactly 100% (fixes 99% or 101% rounding quirks)
+                    val currentSum = percentages.values.sum()
+                    if (currentSum != 100 && percentages.isNotEmpty()) {
+                        // Find the category with the largest percentage to absorb the 1% difference
+                        val maxCategory = percentages.maxByOrNull { it.value }?.key
+                        if (maxCategory != null) {
+                            percentages[maxCategory] = percentages[maxCategory]!! + (100 - currentSum)
+                        }
+                    }
+                    percentages
                 } else {
                     emptyMap()
                 }
@@ -212,6 +238,7 @@ class AdminViewModel : ViewModel() {
             }
         }
     }
+
     
     fun setFilter(status: IssueStatus?) {
         _selectedFilter.value = status
@@ -219,6 +246,11 @@ class AdminViewModel : ViewModel() {
 
     fun setCategoryFilter(category: IssueCategory?) {
         _selectedCategory.value = category
+    }
+    
+    @Suppress("unused")
+    fun setUrgencyFilter(urgency: IssueUrgency?) {
+        _selectedUrgency.value = urgency
     }
 
     fun setSearchQuery(query: String) {
@@ -306,17 +338,27 @@ class AdminViewModel : ViewModel() {
     }
 
     // Assign issue to staff member
+
     fun assignIssueToStaff(issueId: String, staffUserId: String, staffName: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 val docRef = firestore.collection("reports").document(issueId)
 
+                // Read old assignee BEFORE overwriting
+                val beforeSnap = docRef.get().await()
+                val oldIssue = beforeSnap.toObject(Issue::class.java)
+                val oldStaffId = oldIssue?.assignedTo
+                val oldStaffName = oldIssue?.assignedToName
+
+                // Log previous assignee for debugging (uses the variables so they aren't unused)
+                Log.d("ASSIGN_DEBUG", "Previous assignee for $issueId was $oldStaffId ($oldStaffName) - assigning to $staffUserId ($staffName)")
+
                 // Update both assignedTo and status to IN_PROGRESS
                 docRef.update(
                     mapOf(
                         "assignedTo" to staffUserId,
-                        "assignedToName" to staffName,  // ← ADD THIS LINE
+                        "assignedToName" to staffName,  // keep assignment name write
                         "status" to IssueStatus.IN_PROGRESS.name,
                         "updatedAt" to System.currentTimeMillis()
                     )
@@ -349,6 +391,8 @@ class AdminViewModel : ViewModel() {
 
                     Log.d("AdminViewModel", "Issue $issueId assigned to $staffName")
                 }
+
+
             } catch (e: Exception) {
                 Log.e("AdminViewModel", "Error assigning issue: ${e.message}")
             } finally {
@@ -367,6 +411,10 @@ class AdminViewModel : ViewModel() {
         _selectedCategory.value?.let { category ->
             filtered = filtered.filter { it.category.equals(category.name, ignoreCase = true) }
         }
+        
+        _selectedUrgency.value?.let { urgency ->
+            filtered = filtered.filter { it.urgency == urgency }
+        }
 
         if (_searchQuery.value.isNotBlank()) {
             filtered = filtered.filter { issue ->
@@ -378,4 +426,30 @@ class AdminViewModel : ViewModel() {
         
         return filtered
     }
+    private suspend fun fetchIssueInsights(issueIds: List<String>): List<com.university.campuscare.data.model.IssueConversationInsights> {
+        if (issueIds.isEmpty()) return emptyList()
+
+        val results = mutableListOf<com.university.campuscare.data.model.IssueConversationInsights>()
+        val chunks = issueIds.chunked(10)
+
+        for (chunk in chunks) {
+            val snap = firestore.collection("issue_insights")
+                .whereIn("issueId", chunk)
+                .get()
+                .await()
+
+            results += snap.documents.mapNotNull {
+                it.toObject(com.university.campuscare.data.model.IssueConversationInsights::class.java)
+            }
+        }
+        return results
+    }
+
+    private fun median(sorted: List<Long>): Long? {
+        if (sorted.isEmpty()) return null
+        val mid = sorted.size / 2
+        return if (sorted.size % 2 == 1) sorted[mid] else (sorted[mid - 1] + sorted[mid]) / 2
+    }
+
+
 }

@@ -34,4 +34,9 @@ sealed class Screen(val route: String) {
     object DetailedProfile : Screen("detailed_profile/{userId}") {
         fun createRoute(userId: String) = "detailed_profile/$userId"
     }
+    // Internal demo screen - not exposed in main navigation
+    object SessionHistoryViewer : Screen("session_history/{userId}") {
+        fun createRoute(userId: String) = "session_history/$userId"
+    }
+    object StaffHome : Screen("staff_home")
 }

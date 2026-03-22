@@ -1,10 +1,9 @@
 //kotlin
 package com.university.campuscare.ui.screens
 
+import android.os.Build
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -32,8 +31,10 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.university.campuscare.data.model.IssueCategory
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.viewmodel.ReportState
 import com.university.campuscare.viewmodel.ReportViewModel
+import com.university.campuscare.location.scheduleLocationWorker
 import kotlinx.coroutines.launch
 import android.location.Geocoder
 import android.net.Uri
@@ -49,7 +50,8 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
-
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.compose.material.icons.filled.PhotoLibrary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +74,7 @@ fun ReportFaultScreen(
     var confirmedAddress by remember { mutableStateOf<String?>(null) }
 
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedUrgency by viewModel.selectedUrgency.collectAsState()
     val reportState by viewModel.reportState.collectAsState()
     val photoUri by viewModel.photoUri.collectAsState()
 
@@ -103,6 +106,16 @@ fun ReportFaultScreen(
         if (success && tempPhotoUri != null) {
             // save URI string to ViewModel
             viewModel.setPhotoUri(tempPhotoUri.toString())
+        }
+    }
+
+    // Photo Picker Launcher (Gallery)
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            // save URI string to ViewModel
+            viewModel.setPhotoUri(uri.toString())
         }
     }
 
@@ -164,6 +177,18 @@ fun ReportFaultScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+            if (granted) {
+                scheduleLocationWorker(context)
+            }
+        }
+    }
+
     LaunchedEffect(reportState) {
         if (reportState is ReportState.Success) onNavigateBack()
     }
@@ -220,7 +245,6 @@ fun ReportFaultScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
@@ -269,6 +293,50 @@ fun ReportFaultScreen(
                             { viewModel.selectCategory(IssueCategory.OTHER) },
                             Modifier.fillMaxWidth(0.5f)
                         )
+                    }
+                    
+                    item {
+                        Text("Urgency Level", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            UrgencyButton(
+                                "Low",
+                                selectedUrgency == IssueUrgency.LOW,
+                                { viewModel.selectUrgency(IssueUrgency.LOW) },
+                                Color(0xFF4CAF50),
+                                Modifier.weight(1f)
+                            )
+                            UrgencyButton(
+                                "Medium",
+                                selectedUrgency == IssueUrgency.MEDIUM,
+                                { viewModel.selectUrgency(IssueUrgency.MEDIUM) },
+                                Color(0xFFFFA726),
+                                Modifier.weight(1f)
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            UrgencyButton(
+                                "High",
+                                selectedUrgency == IssueUrgency.HIGH,
+                                { viewModel.selectUrgency(IssueUrgency.HIGH) },
+                                Color(0xFFEF5350),
+                                Modifier.weight(1f)
+                            )
+                            UrgencyButton(
+                                "Critical",
+                                selectedUrgency == IssueUrgency.CRITICAL,
+                                { viewModel.selectUrgency(IssueUrgency.CRITICAL) },
+                                Color(0xFFD32F2F),
+                                Modifier.weight(1f)
+                            )
+                        }
                     }
 
                     item {
@@ -358,11 +426,11 @@ fun ReportFaultScreen(
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             PhotoLocationCard(
                                 Icons.Default.CameraAlt,
-                                if (photoUri == null) "Take Photo" else "Retake Photo",
+                                "Camera",
                                 onClick = {
                                     if (ContextCompat.checkSelfPermission(
                                             context,
@@ -379,8 +447,18 @@ fun ReportFaultScreen(
                                 Modifier.weight(1f)
                             )
                             PhotoLocationCard(
+                                Icons.Default.PhotoLibrary,
+                                "Gallery",
+                                onClick = {
+                                    photoPickerLauncher.launch(
+                                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                    )
+                                },
+                                Modifier.weight(1f)
+                            )
+                            PhotoLocationCard(
                                 Icons.Default.LocationOn,
-                                "Add Location",
+                                "Location",
                                 onClick = {
                                     // Check permission or request, then actively fetch and set `room`
                                     if (ContextCompat.checkSelfPermission(
@@ -472,6 +550,28 @@ private fun CategoryButton(text: String, isSelected: Boolean, onClick: () -> Uni
         shape = RoundedCornerShape(8.dp)
     ) {
         Text(text)
+    }
+}
+
+@Composable
+private fun UrgencyButton(
+    text: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(48.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = if (isSelected) color.copy(alpha = 0.15f) else Color.White,
+            contentColor = if (isSelected) color else Color.Gray
+        ),
+        border = BorderStroke(1.5.dp, if (isSelected) color else Color.LightGray),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Text(text, fontSize = 13.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
     }
 }
 

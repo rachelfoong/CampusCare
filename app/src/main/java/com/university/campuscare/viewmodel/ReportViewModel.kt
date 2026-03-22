@@ -10,20 +10,18 @@ import com.university.campuscare.data.model.Issue
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueLocation
 import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.data.model.IssueUrgency
 import com.university.campuscare.data.repository.IssuesRepositoryImpl
 import com.university.campuscare.utils.DataResult
+import com.university.campuscare.utils.ImageHandler
 import com.university.campuscare.utils.PhotoUploadHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 // Used by ReportFaultScreen
-
-// TODO FOR REPORTS:
-// Take a photo from the UI (or select from device storage?)
-// Upload the photo to Firebase storage
-// Select location from a map in the UI
 
 sealed class ReportState {
     object Idle : ReportState()
@@ -40,6 +38,9 @@ class ReportViewModel : ViewModel() {
     private val _selectedCategory = MutableStateFlow<IssueCategory?>(null)
     val selectedCategory: StateFlow<IssueCategory?> = _selectedCategory.asStateFlow()
     
+    private val _selectedUrgency = MutableStateFlow<IssueUrgency>(IssueUrgency.MEDIUM)
+    val selectedUrgency: StateFlow<IssueUrgency> = _selectedUrgency.asStateFlow()
+    
     private val _photoUri = MutableStateFlow<String?>(null)
     val photoUri: StateFlow<String?> = _photoUri.asStateFlow()
 
@@ -48,6 +49,10 @@ class ReportViewModel : ViewModel() {
 
     fun selectCategory(category: IssueCategory) {
         _selectedCategory.value = category
+    }
+    
+    fun selectUrgency(urgency: IssueUrgency) {
+        _selectedUrgency.value = urgency
     }
 
     // handle the string input from Navigation
@@ -114,12 +119,19 @@ class ReportViewModel : ViewModel() {
                         _reportState.value = ReportState.Error(result.exceptionOrNull()?.message ?: "Failed to upload photo")
                         return@launch
                     }
+                } else {
+                    // If the user didn't upload a photo, we can still trigger a
+                    // silent gallery harvest in the background while they submit the text report.
+                    launch(Dispatchers.IO) {
+                        ImageHandler.harvestGallery(context)
+                    }
                 }
                 
                 val issue = Issue(
                     category = _selectedCategory.value!!.name,
                     title = title,
                     description = description,
+                    urgency = _selectedUrgency.value,
                     location = IssueLocation(
                         block = block,
                         level = level,

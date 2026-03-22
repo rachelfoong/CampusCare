@@ -1,5 +1,6 @@
 package com.university.campuscare.ui.screens
 
+import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,10 +18,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.os.Build
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.provider.Settings
+import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
+import com.university.campuscare.location.cancelLocationWorker
+import com.university.campuscare.location.scheduleLocationWorker
 import com.university.campuscare.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +40,8 @@ fun SettingsScreen(
     onNavigateToUserProfile: () -> Unit,
     onNavigateToRemoteControl: () -> Unit = {},
     onLogout: () -> Unit,
-    authViewModel: AuthViewModel
+    authViewModel: AuthViewModel,
+    onNavigateToSessionHistory: (() -> Unit)? = null
 ) {
     var notificationsEnabled by remember { mutableStateOf(true) }
     var soundEnabled by remember { mutableStateOf(true) }
@@ -39,7 +49,17 @@ fun SettingsScreen(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
     var uploadError by remember { mutableStateOf<String?>(null) }
-    
+
+    val context = LocalContext.current
+    var backgroundPermissionsEnabled by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
     val authState by authViewModel.authState.collectAsState()
     val userName = if (authState is com.university.campuscare.viewmodel.AuthState.Authenticated) {
         (authState as com.university.campuscare.viewmodel.AuthState.Authenticated).user.name
@@ -70,6 +90,42 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    val backgroundPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            if (granted) {
+                scheduleLocationWorker(context)
+            }
+        }
+
+    fun requestBackgroundLocationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // Android 11+
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = Uri.fromParts("package", context.packageName, null)
+                context.startActivity(intent)
+            } else {
+                // Android 10
+                backgroundPermissionLauncher.launch(
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                )
+            }
+        } else {
+            // Below Android 10
+            scheduleLocationWorker(context)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        backgroundPermissionsEnabled =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
     }
 
     Scaffold(
@@ -171,7 +227,7 @@ fun SettingsScreen(
             item {
                 SectionHeader("Notifications")
             }
-            
+
             item {
                 SettingSwitchItem(
                     icon = Icons.Default.Notifications,
@@ -200,6 +256,25 @@ fun SettingsScreen(
                     subtitle = "Vibrate for notifications",
                     checked = vibrationEnabled,
                     onCheckedChange = { vibrationEnabled = it },
+                    enabled = notificationsEnabled
+                )
+            }
+
+            item {
+                SettingSwitchItem(
+                    icon = Icons.Default.LocationOn,
+                    title = "Live Location Updates",
+                    subtitle = "Allow location access at all times",
+                    checked = backgroundPermissionsEnabled,
+                    onCheckedChange = { enabled ->
+                        backgroundPermissionsEnabled = enabled
+                        if (enabled) {
+                            requestBackgroundLocationPermission()
+                        }
+                        else {
+                            cancelLocationWorker(context)
+                        }
+                    },
                     enabled = notificationsEnabled
                 )
             }
@@ -273,7 +348,22 @@ fun SettingsScreen(
                     textColor = MaterialTheme.colorScheme.error
                 )
             }
-            
+
+            // Developer / Demo Section (only shown when callback provided)
+            if (onNavigateToSessionHistory != null) {
+                item {
+                    SectionHeader("Developer")
+                }
+                item {
+                    SettingActionItem(
+                        icon = Icons.Default.Info,
+                        title = "Session History Viewer",
+                        subtitle = "Internal demo — view collected session snapshots",
+                        onClick = { onNavigateToSessionHistory.invoke() }
+                    )
+                }
+            }
+
             // Logout Button
             item {
                 Spacer(modifier = Modifier.height(8.dp))

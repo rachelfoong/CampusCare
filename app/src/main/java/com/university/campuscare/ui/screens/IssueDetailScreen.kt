@@ -31,6 +31,7 @@ import coil.compose.AsyncImage
 fun IssueDetailScreen(
     issueId: String,
     isAdmin: Boolean,
+    isStaff: Boolean = false,
     onNavigateBack: () -> Unit,
     onNavigateToChat: (String, String) -> Unit,
     viewModel: IssuesViewModel = viewModel()
@@ -110,7 +111,12 @@ fun IssueDetailScreen(
                     IssueDetailContent(
                         issue = issue,
                         isAdmin = isAdmin,
-                        onNavigateToChat = onNavigateToChat
+                        isStaff = isStaff,
+                        onNavigateToChat = onNavigateToChat,
+                        onResolveClick = {
+                            viewModel.resolveIssue(issue.id)
+                            onNavigateBack()
+                        }
                     )
                 }
             }
@@ -122,7 +128,9 @@ fun IssueDetailScreen(
 private fun IssueDetailContent(
     issue: Issue,
     isAdmin: Boolean,
-    onNavigateToChat: (String, String) -> Unit
+    isStaff: Boolean,
+    onNavigateToChat: (String, String) -> Unit,
+    onResolveClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     
@@ -233,11 +241,6 @@ private fun IssueDetailContent(
                         fontWeight = FontWeight.Medium,
                         color = Color.Black
                     )
-                    Text(
-                        text = "Reporter ID: ${issue.reportedBy}...",
-                        fontSize = 13.sp,
-                        color = Color.Gray
-                    )
                 }
             }
         }
@@ -292,11 +295,6 @@ private fun IssueDetailContent(
                     fontWeight = FontWeight.Medium,
                     color = Color.Black
                 )
-                Text(
-                    text = "Staff ID: ${issue.assignedTo}...",
-                    fontSize = 13.sp,
-                    color = Color.Gray
-                )
             }
         }
         
@@ -320,22 +318,46 @@ private fun IssueDetailContent(
                     fontWeight = FontWeight.Bold,
                     color = Color.Black
                 )
-                
+
                 // Chat button (always available for assigned issues)
                 if (issue.status != IssueStatus.PENDING) {
-                    Button(
-                        onClick = { onNavigateToChat(issue.id, issue.title) },
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
-                        shape = RoundedCornerShape(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.Chat,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open Chat")
+                        Button(
+                            onClick = { onNavigateToChat(issue.id, issue.title) },
+                            // Takes up half the width if the resolve button is showing, else full width
+                            modifier = if ((isAdmin || isStaff) && issue.status == IssueStatus.IN_PROGRESS) Modifier.weight(1f) else Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF0000)),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Chat")
+                        }
+
+                        // Resolve Button (Only shows for Staff/Admins when issue is In Progress)
+                        if ((isAdmin || isStaff) && issue.status == IssueStatus.IN_PROGRESS) {
+                            Button(
+                                onClick = onResolveClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Resolve")
+                            }
+                        }
                     }
                 } else {
                     Text("Chat available once issue is accepted.", color = Color.Gray, fontSize = 14.sp)

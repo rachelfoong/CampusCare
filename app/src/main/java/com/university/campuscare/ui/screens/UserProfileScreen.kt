@@ -2,6 +2,7 @@ package com.university.campuscare.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -47,7 +48,7 @@ fun UserProfileScreen(
                 title = { Text("User Profile") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -105,6 +106,7 @@ fun UserProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileContent(
     user: User,
@@ -113,6 +115,9 @@ fun UserProfileContent(
 ) {
     var name by remember { mutableStateOf(user.name) }
     var department by remember { mutableStateOf(user.department) }
+
+    var deptDropdownExpanded by remember { mutableStateOf(false) }
+    val departments = listOf("Security", "Facilities", "IT", "Administration", "Housing")
 
     Column(
         modifier = Modifier
@@ -128,9 +133,9 @@ fun UserProfileContent(
             fontWeight = FontWeight.Bold,
             color = Color(0xFFFF0000)
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Name field
         OutlinedTextField(
             value = name,
@@ -145,7 +150,7 @@ fun UserProfileContent(
                 cursorColor = Color(0xFFFF0000)
             )
         )
-        
+
         // Email field (read-only)
         OutlinedTextField(
             value = user.email,
@@ -160,22 +165,50 @@ fun UserProfileContent(
                 disabledTextColor = Color.DarkGray
             )
         )
-        
-        // Department field
-        OutlinedTextField(
-            value = department,
-            onValueChange = { department = it },
-            label = { Text("Department") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            enabled = !isUpdating,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFFFF0000),
-                focusedLabelColor = Color(0xFFFF0000),
-                cursorColor = Color(0xFFFF0000)
-            )
-        )
-        
+
+        // Department field (Only show for non-students)
+        if (user.role != "STUDENT") {
+            ExposedDropdownMenuBox(
+                expanded = deptDropdownExpanded,
+                onExpandedChange = { if (!isUpdating) deptDropdownExpanded = !deptDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = department.ifEmpty { "Select Department" },
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Department") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = deptDropdownExpanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFFF0000),
+                        focusedLabelColor = Color(0xFFFF0000),
+                        cursorColor = Color(0xFFFF0000)
+                    ),
+                    enabled = !isUpdating
+                )
+
+                ExposedDropdownMenu(
+                    expanded = deptDropdownExpanded,
+                    onDismissRequest = { deptDropdownExpanded = false },
+                    containerColor = Color.White
+                ) {
+                    departments.forEach { deptOption ->
+                        DropdownMenuItem(
+                            text = { Text(deptOption) },
+                            onClick = {
+                                department = deptOption
+                                deptDropdownExpanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         // Role field (read-only)
         OutlinedTextField(
             value = user.role,
@@ -190,12 +223,12 @@ fun UserProfileContent(
                 disabledTextColor = Color.DarkGray
             )
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         // Save button
         Button(
-            onClick = { 
+            onClick = {
                 val updatedUser = user.copy(name = name, department = department)
                 onUpdateProfile(updatedUser)
             },

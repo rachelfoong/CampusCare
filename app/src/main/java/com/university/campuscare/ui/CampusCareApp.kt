@@ -1,5 +1,7 @@
 package com.university.campuscare.ui
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -12,6 +14,7 @@ import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.viewmodel.AuthState
 import androidx.compose.runtime.collectAsState
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CampusCareApp() {
     val navController = rememberNavController()
@@ -36,6 +39,11 @@ fun CampusCareApp() {
                 },
                 onNavigateToAdminHome = {
                     navController.navigate(Screen.AdminHome.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
@@ -64,6 +72,11 @@ fun CampusCareApp() {
                 },
                 onNavigateToAdminHome = {
                     navController.navigate(Screen.AdminHome.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                },
+                onNavigateToStaffHome = {
+                    navController.navigate(Screen.StaffHome.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -111,14 +124,8 @@ fun CampusCareApp() {
                 onNavigateToUserProfile = {
                     navController.navigate(Screen.UserProfile.route)
                 },
-                onNavigateToProfile = { userId ->
-                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
-                },
                 onNavigateToChat = { issueId, issueTitle ->
                     navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
-                },
-                onNavigateToDirectChat = { adminId, adminName ->
-                    navController.navigate(Screen.DirectChat.createRoute(adminId, adminName))
                 },
                 onNavigateToIssueDetails = { issueId ->
                     navController.navigate(Screen.IssueDetail.createRoute(issueId))
@@ -154,6 +161,28 @@ fun CampusCareApp() {
             )
         }
 
+        composable(Screen.StaffHome.route) {
+            StaffHomeScreen(
+                onNavigateToSettings = { navController.navigate(Screen.Settings.route) },
+                onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
+                onNavigateToUserProfile = { navController.navigate(Screen.UserProfile.route) },
+                onNavigateToFacilitiesTeam = { navController.navigate(Screen.FacilitiesTeam.route) },
+                onNavigateToChat = { issueId, issueTitle ->
+                    navController.navigate(Screen.Chat.createRoute(issueId, issueTitle))
+                },
+                onNavigateToIssueDetails = { issueId ->
+                    navController.navigate(Screen.IssueDetail.createRoute(issueId))
+                },
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                authViewModel = authViewModel
+            )
+        }
+
         composable(
             route = Screen.ReportFault.route,
             arguments = listOf(
@@ -178,6 +207,9 @@ fun CampusCareApp() {
         }
 
         composable(Screen.Settings.route) {
+            val authState = authViewModel.authState.collectAsState().value
+            val userId = if (authState is AuthState.Authenticated) authState.user.userId else ""
+
             SettingsScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToHelpSupport = { navController.navigate(Screen.HelpSupport.route) },
@@ -188,7 +220,10 @@ fun CampusCareApp() {
                         popUpTo(0) { inclusive = true }
                     }
                 },
-                authViewModel = authViewModel
+                authViewModel = authViewModel,
+                onNavigateToSessionHistory = {
+                    navController.navigate(Screen.SessionHistoryViewer.createRoute(userId))
+                }
             )
         }
 
@@ -232,40 +267,16 @@ fun CampusCareApp() {
         }
 
         composable(
-            route = Screen.DirectChat.route,
-            arguments = listOf(
-                navArgument("adminId") { type = NavType.StringType },
-                navArgument("adminName") { type = NavType.StringType }
-            )
-        ) { backStackEntry ->
-            val adminId = backStackEntry.arguments?.getString("adminId") ?: ""
-            val adminName = backStackEntry.arguments?.getString("adminName") ?: ""
-            val authState = authViewModel.authState.collectAsState().value
-            val currentUserId = if (authState is AuthState.Authenticated) authState.user.userId else ""
-            val currentUserName = if (authState is AuthState.Authenticated) authState.user.name else ""
-
-            DirectChatScreen(
-                adminId = adminId,
-                adminName = adminName,
-                currentUserId = currentUserId,
-                currentUserName = currentUserName,
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToProfile = { userId ->
-                    navController.navigate(Screen.DetailedProfile.createRoute(userId))
-                }
-            )
-        }
-
-        composable(
             route = Screen.IssueDetail.route,
             arguments = listOf(navArgument("issueId") { type = NavType.StringType })
         ) { backStackEntry ->
             val issueId = backStackEntry.arguments?.getString("issueId") ?: ""
             val authState = authViewModel.authState.collectAsState().value
-            val isAdmin = if (authState is AuthState.Authenticated) authState.user.role == "ADMIN" else false
+            val role = (authState as? AuthState.Authenticated)?.user?.role ?: "STUDENT"
             IssueDetailScreen(
                 issueId = issueId,
-                isAdmin = isAdmin,
+                isAdmin = role == "ADMIN",
+                isStaff = role == "STAFF",
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToChat = { id, title ->
                     navController.navigate(Screen.Chat.createRoute(id, title))
@@ -299,6 +310,18 @@ fun CampusCareApp() {
                 onNavigateToDirectChat = { adminId, adminName ->
                     navController.navigate(Screen.DirectChat.createRoute(adminId, adminName))
                 }
+            )
+        }
+
+        // Internal demo screen for session history viewer
+        composable(
+            route = Screen.SessionHistoryViewer.route,
+            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+            SessionHistoryViewerScreen(
+                userId = userId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

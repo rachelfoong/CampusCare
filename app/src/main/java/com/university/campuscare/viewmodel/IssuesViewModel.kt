@@ -20,10 +20,6 @@ sealed class IssuesState {
     data class Error(val message: String) : IssuesState()
 }
 
-// TODO FOR ISSUES:
-// Note - IssuesTab.kt is currently used for the issues tab UI, not MyIssuesScreen!
-// Tap on each issue to open its detailed view
-// Button for easy access to the corresponding chat
 class IssuesViewModel : ViewModel() {
     private val _issuesState = MutableStateFlow<IssuesState>(IssuesState.Idle)
     val issuesState: StateFlow<IssuesState> = _issuesState.asStateFlow()
@@ -38,20 +34,19 @@ class IssuesViewModel : ViewModel() {
     val selectedFilter: StateFlow<IssueStatus?> = _selectedFilter.asStateFlow()
     
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
-    
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     private var loadIssuesJob: Job? = null
 
     // Load all issues for the user
-    fun loadIssues(userId: String? = null) {
+    fun loadIssues(userId: String? = null, role: String = "STUDENT") {
         if (userId.isNullOrEmpty()) return
 
         loadIssuesJob?.cancel()
         loadIssuesJob = viewModelScope.launch {
-            issuesRepository.getMyIssues(userId).collect { result ->
+            issuesRepository.getMyIssues(userId, role).collect { result ->
                 when(result) {
                     is DataResult.Success -> {
                         _issues.value = result.data
@@ -59,7 +54,7 @@ class IssuesViewModel : ViewModel() {
                         _isLoading.value = false
                     }
                     is DataResult.Error -> {
-                        _issuesState.value = IssuesState.Error(result.error.peekContent() ?: "Failed to load issues")
+                        _issuesState.value = IssuesState.Error(result.error.peekContent())
                         _isLoading.value = false
                     }
                     is DataResult.Loading -> {
@@ -77,10 +72,6 @@ class IssuesViewModel : ViewModel() {
 
     fun setFilter(status: IssueStatus?) {
         _selectedFilter.value = status
-    }
-    
-    fun setSearchQuery(query: String) {
-        _searchQuery.value = query
     }
     
     fun getFilteredIssues(): List<Issue> {
@@ -117,7 +108,7 @@ class IssuesViewModel : ViewModel() {
 
                     is DataResult.Error -> {
                         _issuesState.value =
-                            IssuesState.Error(result.error.peekContent() ?: "Failed to load issue")
+                            IssuesState.Error(result.error.peekContent())
                         _isLoading.value = false
                     }
 
@@ -130,6 +121,26 @@ class IssuesViewModel : ViewModel() {
                         _issuesState.value = IssuesState.Idle
                         _isLoading.value = false
                     }
+                }
+            }
+        }
+    }
+
+    fun resolveIssue(issueId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            // Update the status to RESOLVED in Firestore
+            issuesRepository.updateIssueStatus(issueId, IssueStatus.RESOLVED).collect { result ->
+                when (result) {
+                    is DataResult.Success -> {
+                        // The SnapshotListener in loadIssues will automatically refresh the list
+                        _isLoading.value = false
+                    }
+                    is DataResult.Error -> {
+                        _issuesState.value = IssuesState.Error(result.error.peekContent())
+                        _isLoading.value = false
+                    }
+                    else -> {}
                 }
             }
         }

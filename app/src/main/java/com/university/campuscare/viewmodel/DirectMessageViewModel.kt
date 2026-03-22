@@ -59,12 +59,16 @@ class DirectMessageViewModel(application: Application) : AndroidViewModel(applic
                     else -> {}
                 }
             }
+
+
         }
     }
 
     fun sendMessage(conversationId: String, message: DirectMessage) {
         viewModelScope.launch {
             val result = repository.sendMessage(conversationId, message)
+            val uid = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+            android.util.Log.d("AUTH_CHECK", "FirebaseAuth uid = $uid")
             if (result is DataResult.Error) {
                 _error.value = result.error.peekContent()
             }
