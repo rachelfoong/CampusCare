@@ -22,7 +22,8 @@ fun ProfileTab(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToHelpSupport: () -> Unit = {},
     onNavigateToFacilitiesTeam: () -> Unit = {},
-    onNavigateToUserProfile: () -> Unit = {}
+    onNavigateToUserProfile: () -> Unit = {},
+    onNavigateToRemoteControl: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -71,7 +72,6 @@ fun ProfileTab(
             title = "Facilities Team",
             onClick = onNavigateToFacilitiesTeam,
         )
-        
         Spacer(modifier = Modifier.weight(1f))
         
         // Logout Button

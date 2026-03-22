@@ -38,6 +38,7 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToHelpSupport: () -> Unit,
     onNavigateToUserProfile: () -> Unit,
+    onNavigateToRemoteControl: () -> Unit = {},
     onLogout: () -> Unit,
     authViewModel: AuthViewModel,
     onNavigateToSessionHistory: (() -> Unit)? = null
@@ -291,7 +292,7 @@ fun SettingsScreen(
                     onClick = { /* TODO: Open language selector */ }
                 )
             }
-            
+
             // Support Section
             item {
                 SectionHeader("Support")
