@@ -41,6 +41,7 @@ fun HomeScreen(
     onNavigateToDirectChat: (String, String) -> Unit,
     onNavigateToIssueDetails: (String) -> Unit,
     onNavigateToFacilitiesTeam: () -> Unit,
+    onNavigateToRemoteControl: () -> Unit = {},
     onLogout: () -> Unit,
     authViewModel: AuthViewModel
 ) {
@@ -98,7 +99,7 @@ fun HomeScreen(
                 1 -> IssuesTab(userId, onNavigateToChat, onNavigateToIssueDetails)
                 2 -> MessagesTab(userId, onNavigateToDirectChat, onNavigateToProfile)
                 3 -> AlertsTab(userId)
-                4 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam, onNavigateToUserProfile)
+                4 -> ProfileTab(userName, onLogout, onNavigateToSettings, onNavigateToHelpSupport, onNavigateToFacilitiesTeam, onNavigateToUserProfile, onNavigateToRemoteControl)
             }
         }
     }
