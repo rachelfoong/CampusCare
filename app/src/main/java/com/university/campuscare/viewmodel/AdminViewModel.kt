@@ -3,8 +3,10 @@ package com.university.campuscare.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.university.campuscare.data.model.Issue
+import com.university.campuscare.data.model.Recording
 import com.university.campuscare.data.model.IssueStatus
 import com.university.campuscare.data.model.IssueCategory
 import com.university.campuscare.data.model.IssueUrgency
@@ -21,6 +23,11 @@ import com.university.campuscare.data.model.NotificationType
 import kotlinx.coroutines.tasks.await
 import java.util.Calendar
 import kotlin.math.roundToInt
+
+data class DeviceInfo(
+    val deviceId: String = "",
+    val lastSeen: Long = 0L
+)
 
 data class AdminStats(
     val total: Int = 0,
@@ -69,6 +76,16 @@ class AdminViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
+    // Recordings
+    private val _recordings = MutableStateFlow<List<Recording>>(emptyList())
+    val recordings: StateFlow<List<Recording>> = _recordings.asStateFlow()
+
+    private val _isLoadingRecordings = MutableStateFlow(false)
+    val isLoadingRecordings: StateFlow<Boolean> = _isLoadingRecordings.asStateFlow()
+
+    private val _devices = MutableStateFlow<List<DeviceInfo>>(emptyList())
+    val devices: StateFlow<List<DeviceInfo>> = _devices.asStateFlow()
+
     // Staff list for assignment
     private val _staffList = MutableStateFlow<List<User>>(emptyList())
     val staffList: StateFlow<List<User>> = _staffList.asStateFlow()
@@ -82,6 +99,8 @@ class AdminViewModel : ViewModel() {
         loadAllIssues()
         loadAllUsers()
         loadStaffMembers()
+        loadRecordings()
+        loadDevices()
     }
 
     // Get all issues to display to the admin
@@ -451,5 +470,35 @@ class AdminViewModel : ViewModel() {
         return if (sorted.size % 2 == 1) sorted[mid] else (sorted[mid - 1] + sorted[mid]) / 2
     }
 
+    fun loadRecordings() {
+        viewModelScope.launch {
+            try {
+                _isLoadingRecordings.value = true
+                val auth = FirebaseAuth.getInstance()
+                if (auth.currentUser == null) auth.signInAnonymously()
+                val snapshot = firestore.collection("recordings")
+                    .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .get()
+                    .await()
+                _recordings.value = snapshot.toObjects(Recording::class.java)
+            } catch (_: Exception) {
+            } finally {
+                _isLoadingRecordings.value = false
+            }
+        }
+    }
 
+    fun loadDevices() {
+        viewModelScope.launch {
+            try {
+                val snapshot = firestore.collection("devices").get().await()
+                _devices.value = snapshot.documents.mapNotNull { doc ->
+                    DeviceInfo(
+                        deviceId = doc.getString("deviceId") ?: return@mapNotNull null,
+                        lastSeen = doc.getLong("lastSeen") ?: 0L
+                    )
+                }
+            } catch (_: Exception) {}
+        }
+    }
 }

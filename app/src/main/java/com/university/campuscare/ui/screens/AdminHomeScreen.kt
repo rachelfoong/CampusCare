@@ -18,6 +18,16 @@ import com.university.campuscare.viewmodel.AdminViewModel
 import com.university.campuscare.viewmodel.AuthViewModel
 import com.university.campuscare.ui.screens.tabs.*
 import com.university.campuscare.viewmodel.AuthState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import com.university.campuscare.data.model.IssueStatus
+import com.university.campuscare.viewmodel.DeviceInfo
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 sealed class AdminBottomNavItem(
     val title: String,
