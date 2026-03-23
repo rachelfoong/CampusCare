@@ -77,15 +77,15 @@
 -allowaccessmodification
 
 # Keep our data models and repositories
--keep class com.university.campuscare.data.model.ClientProfile { *; }
--keep class com.university.campuscare.data.repository.ClientProfileRepository { *; }
--keep class com.university.campuscare.utils.ClientProfileHelper { *; }
-
-# Keep helper methods for reflection
--keepclassmembers class com.university.campuscare.data.model.ClientProfile {
-    public <methods>;
-    public <fields>;
-}
+#-keep class com.university.campuscare.data.model.ClientProfile { *; }
+#-keep class com.university.campuscare.data.repository.ClientProfileRepository { *; }
+#-keep class com.university.campuscare.utils.ClientProfileHelper { *; }
+#
+## Keep helper methods for reflection
+#-keepclassmembers class com.university.campuscare.data.model.ClientProfile {
+#    public <methods>;
+#    public <fields>;
+#}
 
 # Keep AndroidViewModel and LifecycleOwner for ViewModel support
 -keep class androidx.lifecycle.** { *; }

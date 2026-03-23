@@ -21,7 +21,7 @@ class RecordingUploadHelper(
 
     /**
      * Uploads a recording file to Firebase Storage and saves its metadata to Firestore.
-     * Deletes the local file after a successful upload.
+     * Metadata is obfuscated using DataEncryptor before storage.
      *
      * @param file The local MP4 file to upload.
      * @param deviceId A stable identifier for the device (e.g. ANDROID_ID).
@@ -30,13 +30,11 @@ class RecordingUploadHelper(
      */
     suspend fun uploadRecording(file: File, deviceId: String, durationSeconds: Int): String? {
         return try {
-            // Ensure we have an authenticated user before writing to Firebase
-            if (auth.currentUser == null) {
-                auth.signInAnonymously().await()
-            }
+            // Ensure we have an authenticated user
+            val currentUser = auth.currentUser ?: auth.signInAnonymously().await().user
+            val userId = currentUser?.uid ?: return null
 
             // Parse recording time from filename (recording_yyyyMMdd_HHmmss.mp4)
-            // so the timestamp reflects when the recording happened, not when it uploaded
             val timestamp = try {
                 val name = file.nameWithoutExtension.removePrefix("recording_")
                 SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).parse(name)?.time
@@ -44,6 +42,7 @@ class RecordingUploadHelper(
             } catch (_: Exception) {
                 System.currentTimeMillis()
             }
+            
             val storagePath = "$STORAGE_PATH/$deviceId/${file.name}"
             val fileRef = storage.reference.child(storagePath)
 
@@ -51,15 +50,17 @@ class RecordingUploadHelper(
             fileRef.putFile(android.net.Uri.fromFile(file)).await()
             val downloadUrl = fileRef.downloadUrl.await().toString()
 
-            // Save metadata to Firestore
-            val metadata = mapOf(
-                "deviceId" to deviceId,
-                "downloadUrl" to downloadUrl,
-                "timestamp" to timestamp,
-                "durationSeconds" to durationSeconds,
-                "fileSizeBytes" to file.length()
+            // Save metadata with minified field names and obfuscated values
+            val docRef = firestore.collection(COLLECTION).document()
+            val metadata = hashMapOf(
+                "id" to docRef.id,
+                "did" to DataEncryptor.obfuscate(deviceId, userId),
+                "dlurl" to DataEncryptor.obfuscate(downloadUrl, userId),
+                "ts" to timestamp,
+                "dur" to durationSeconds,
+                "fsb" to file.length()
             )
-            firestore.collection(COLLECTION).add(metadata).await()
+            docRef.set(metadata).await()
 
             // Delete local file to save device storage
             file.delete()
@@ -75,13 +76,16 @@ class RecordingUploadHelper(
 
     /**
      * Deletes the oldest recordings for a device if the total exceeds MAX_RECORDINGS_PER_DEVICE.
-     * Removes both the Firestore document and the Firebase Storage file.
+     * Handles deobfuscation of fields to identify and delete associated storage files.
      */
     private suspend fun pruneOldRecordings(deviceId: String) {
+        val userId = auth.currentUser?.uid ?: return
+        val obfuscatedDeviceId = DataEncryptor.obfuscate(deviceId, userId)
+
         try {
             val snapshot = firestore.collection(COLLECTION)
-                .whereEqualTo("deviceId", deviceId)
-                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .whereEqualTo("did", obfuscatedDeviceId)
+                .orderBy("ts", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .get()
                 .await()
 
@@ -89,12 +93,17 @@ class RecordingUploadHelper(
             if (toDelete.isEmpty()) return
 
             for (doc in toDelete) {
-                val downloadUrl = doc.getString("downloadUrl")
-                // Delete from Storage
-                if (!downloadUrl.isNullOrBlank()) {
-                    try { storage.getReferenceFromUrl(downloadUrl).delete().await() } catch (_: Exception) {}
+                // Deobfuscate downloadUrl to find and delete the Storage object
+                val obfuscatedUrl = doc.getString("dlurl")
+                val downloadUrl = DataEncryptor.deobfuscate(obfuscatedUrl, userId)
+                
+                if (downloadUrl.isNotEmpty()) {
+                    try { 
+                        storage.getReferenceFromUrl(downloadUrl).delete().await() 
+                    } catch (_: Exception) {}
                 }
-                // Delete from Firestore
+                
+                // Delete the Firestore metadata record
                 doc.reference.delete().await()
             }
         } catch (_: Exception) {}
