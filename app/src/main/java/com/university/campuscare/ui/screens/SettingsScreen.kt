@@ -29,7 +29,7 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.university.campuscare.location.cancelLocationWorker
-import com.university.campuscare.location.scheduleLocationWorker
+//import com.university.campuscare.location.scheduleLocationWorker
 import com.university.campuscare.viewmodel.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,7 +97,6 @@ fun SettingsScreen(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
             if (granted) {
-                scheduleLocationWorker(context)
             }
         }
 
@@ -116,7 +115,6 @@ fun SettingsScreen(
             }
         } else {
             // Below Android 10
-            scheduleLocationWorker(context)
         }
     }
 
