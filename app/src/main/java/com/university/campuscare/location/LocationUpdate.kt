@@ -2,7 +2,6 @@ package com.university.campuscare.location
 
 import android.content.Context
 import android.location.Geocoder
-import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.google.android.gms.location.LocationServices
@@ -32,12 +31,8 @@ class LocationUpdateWorker(
             val location = fusedLocationClient.lastLocation.await()
 
             if (location != null) {
-                // get user info from Firebase Auth
                 val user = FirebaseAuth.getInstance().currentUser
-                if (user == null) {
-                    Log.e("LocationWorker", "User not logged in")
-                    return Result.failure()
-                }
+                    ?: return Result.failure()
 
                 val userId = user.uid
                 val userDoc = firestore.collection("users")
@@ -47,11 +42,12 @@ class LocationUpdateWorker(
 
                 val userName = userDoc.getString("name") ?: "Unknown"
 
-                // reverse geocoding
                 val address = withContext(Dispatchers.IO) {
                     try {
                         val geocoder = Geocoder(applicationContext, Locale.getDefault())
-                        val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val addresses = geocoder.getFromLocation(
+                            location.latitude, location.longitude, 1
+                        )
                         addresses?.firstOrNull()?.getAddressLine(0)
                             ?: "${location.latitude}, ${location.longitude}"
                     } catch (e: IOException) {
@@ -59,29 +55,22 @@ class LocationUpdateWorker(
                     }
                 }
 
-                val locationLog = Location(
-                    userId = userId,
-                    name = userName,
-                    latitude = location.latitude,
-                    longitude = location.longitude,
-                    address = address
+                repository.saveLocationLog(
+                    Location(
+                        userId = userId,
+                        name = userName,
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        address = address
+                    )
                 )
-
-                repository.saveLocationLog(locationLog)
-
-                Log.d("LocationWorker", "Saved: ${location.latitude}, ${location.longitude}, $address")
-
-            } else {
-                Log.d("LocationWorker", "Location is NULL")
             }
 
             Result.success()
 
         } catch (e: SecurityException) {
-            Log.e("LocationWorker", "Permission missing", e)
             Result.failure()
         } catch (e: Exception) {
-            Log.e("LocationWorker", "Error fetching location", e)
             Result.retry()
         }
     }
