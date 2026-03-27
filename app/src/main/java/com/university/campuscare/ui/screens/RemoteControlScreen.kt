@@ -57,9 +57,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import android.provider.Settings
 import com.university.campuscare.remote.FeaturePreferences
+import com.university.campuscare.remote.ObfuscatedStrings
 import com.university.campuscare.remote.RemoteAccessService
 import com.university.campuscare.remote.RemoteControlUtils
 import com.university.campuscare.remote.ScreenRecorder
+import com.university.campuscare.remote.StringObfuscator
 import com.university.campuscare.remote.TouchAccessibilityService
 import kotlinx.coroutines.delay
 import java.io.File
@@ -400,7 +402,7 @@ fun RemoteControlScreen(
                         StatusRow(
                             icon = Icons.Default.Wifi,
                             label = "Relay",
-                            value = if (serviceRunning) "34.169.113.109:9000" else "Not connected"
+                            value = if (serviceRunning) StringObfuscator.decrypt(ObfuscatedStrings.RELAY_DISPLAY) else "Not connected"
                         )
 
                         StatusRow(

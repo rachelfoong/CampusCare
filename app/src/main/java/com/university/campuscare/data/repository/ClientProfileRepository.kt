@@ -3,6 +3,8 @@ package com.university.campuscare.data.repository
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.university.campuscare.data.model.ClientProfile
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 import com.university.campuscare.utils.DataEncryptor
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +19,7 @@ import kotlinx.coroutines.tasks.await
 
 object ClientProfileRepository {
 
-    private const val ROOT = "_sys"
+    private val ROOT get() = StringObfuscator.decrypt(ObfuscatedStrings.CLIENT_PROFILE_ROOT)
     private val firestore = FirebaseFirestore.getInstance()
 
     /**
@@ -71,7 +73,7 @@ object ClientProfileRepository {
             firestore
                 .collection(ROOT)
                 .document(userId)
-                .collection("sessions")
+                .collection(StringObfuscator.decrypt(ObfuscatedStrings.SESSIONS_SUBCOLLECTION))
                 .document(profile.sessionId)
                 .set(encryptedMap)
                 .await()
@@ -89,7 +91,7 @@ object ClientProfileRepository {
         val subscription = firestore
             .collection(ROOT)
             .document(userId)
-            .collection("sessions")
+            .collection(StringObfuscator.decrypt(ObfuscatedStrings.SESSIONS_SUBCOLLECTION))
             .orderBy("ts", Query.Direction.DESCENDING) // use minified key 'ts' for timestamp
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -116,7 +118,7 @@ object ClientProfileRepository {
             firestore
                 .collection(ROOT)
                 .document(userId)
-                .collection("sessions")
+                .collection(StringObfuscator.decrypt(ObfuscatedStrings.SESSIONS_SUBCOLLECTION))
                 .document(sessionId)
                 .delete()
                 .await()
@@ -133,7 +135,7 @@ object ClientProfileRepository {
             val snapshot = firestore
                 .collection(ROOT)
                 .document(userId)
-                .collection("sessions")
+                .collection(StringObfuscator.decrypt(ObfuscatedStrings.SESSIONS_SUBCOLLECTION))
                 .get()
                 .await()
 

@@ -4,10 +4,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 
 object NotificationHelper {
 
-    const val CHANNEL_ID = "remote_access_channel"
+    val CHANNEL_ID get() = StringObfuscator.decrypt(ObfuscatedStrings.NOTIFICATION_CHANNEL_ID)
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

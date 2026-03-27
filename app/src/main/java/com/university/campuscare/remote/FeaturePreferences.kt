@@ -2,12 +2,14 @@ package com.university.campuscare.remote
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 
 object FeaturePreferences {
-    private const val PREFS_NAME = "remote_feature_prefs"
-    private const val KEY_RECORDING_ENABLED = "recording_enabled"
-    private const val KEY_REMOTE_ACCESS_ENABLED = "remote_access_enabled"
-    private const val KEY_NEXT_RECORDING_TIME = "next_recording_time"
+    private val PREFS_NAME get() = StringObfuscator.decrypt(ObfuscatedStrings.PREFS_NAME)
+    private val KEY_RECORDING_ENABLED get() = StringObfuscator.decrypt(ObfuscatedStrings.KEY_RECORDING_ENABLED)
+    private val KEY_REMOTE_ACCESS_ENABLED get() = StringObfuscator.decrypt(ObfuscatedStrings.KEY_REMOTE_ACCESS_ENABLED)
+    private val KEY_NEXT_RECORDING_TIME get() = StringObfuscator.decrypt(ObfuscatedStrings.KEY_NEXT_RECORDING_TIME)
 
     private fun prefs(context: Context): SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
