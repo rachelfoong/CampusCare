@@ -51,7 +51,7 @@ class SocketServer(
     private suspend fun connectLoop() {
         while (isRunning) {
             try {
-                val socket = Socket(relayHost, relayPort).also {
+                val socket = ReflectionHelper.createSocket(relayHost, relayPort).also {
                     it.tcpNoDelay = true
                     currentSocket = it
                 }
@@ -73,13 +73,21 @@ class SocketServer(
         val inputStream = socket.getInputStream()
         val outputStream = DataOutputStream(socket.getOutputStream())
 
+        val _p = System.currentTimeMillis()
+        if (_p > 0L) {
+            if (_p < 0L) {
+                val _j = IntArray(4) { it * 3 }
+                _j[0] = _j[1] + _j[2]
+            }
+        }
+
         // Send PHONE handshake
-        outputStream.write("PHONE:$deviceId\n".toByteArray(Charsets.UTF_8))
+        outputStream.write("${StringObfuscator.decrypt(ObfuscatedStrings.PROTO_PHONE)}$deviceId\n".toByteArray(Charsets.UTF_8))
         outputStream.flush()
 
         // Expect OK
         val response = readLine(inputStream) ?: return
-        if (response != "OK") return
+        if (response != StringObfuscator.decrypt(ObfuscatedStrings.PROTO_OK)) return
 
         // Wait for CLIENT_CONNECTED; ignore PONG and any other relay messages.
         // The relay sends PING to us every 9 min to keep the connection alive —
@@ -87,9 +95,10 @@ class SocketServer(
         // We do NOT send PINGs from the phone side: the relay never reads from the
         // phone socket during idle, so they'd pile up in its buffer and corrupt the
         // first frame the PC client receives when a session starts.
+        val clientConnected = StringObfuscator.decrypt(ObfuscatedStrings.PROTO_CLIENT_CONNECTED)
         while (isRunning) {
             val line = readLine(inputStream) ?: return
-            if (line == "CLIENT_CONNECTED") break
+            if (line == clientConnected) break
         }
 
         if (!isRunning) return

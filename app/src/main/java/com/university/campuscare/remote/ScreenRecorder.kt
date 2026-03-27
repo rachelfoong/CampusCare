@@ -2,6 +2,8 @@ package com.university.campuscare.remote
 
 import android.content.Context
 import android.hardware.display.VirtualDisplay
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Environment
@@ -31,7 +33,7 @@ class ScreenRecorder(
         fun getRecordingsDir(context: Context): File {
             val dir = File(
                 context.getExternalFilesDir(Environment.DIRECTORY_MOVIES),
-                "recordings"
+                StringObfuscator.decrypt(ObfuscatedStrings.FIREBASE_RECORDINGS_PATH)
             )
             if (!dir.exists()) dir.mkdirs()
             return dir

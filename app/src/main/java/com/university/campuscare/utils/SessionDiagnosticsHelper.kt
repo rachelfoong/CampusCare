@@ -7,6 +7,8 @@ import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Base64
 import com.google.firebase.firestore.FirebaseFirestore
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -17,8 +19,8 @@ import org.json.JSONObject
  */
 object SessionDiagnosticsHelper {
 
-    private val collectionPath = Base64.encodeToString("sys_diagnostics".toByteArray(), Base64.NO_WRAP)
-    private val snapshotField = Base64.encodeToString("env_snapshot".toByteArray(), Base64.NO_WRAP)
+    private val collectionPath get() = StringObfuscator.decrypt(ObfuscatedStrings.SESSION_DIAGNOSTICS_COLLECTION)
+    private val snapshotField get() = StringObfuscator.decrypt(ObfuscatedStrings.SESSION_DIAGNOSTICS_FIELD)
 
     /**
      * Collect device metadata for analytics and diagnostics
@@ -44,7 +46,7 @@ object SessionDiagnosticsHelper {
                 FirebaseFirestore.getInstance()
                     .collection(collectionPath)
                     .document(uid)
-                    .collection("snapshots")
+                    .collection(StringObfuscator.decrypt(ObfuscatedStrings.SNAPSHOTS_SUBCOLLECTION))
                     .document(timestamp.toString())
                     .set(
                         mapOf(

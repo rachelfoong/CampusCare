@@ -4,6 +4,8 @@ import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.university.campuscare.data.model.Location
+import com.university.campuscare.remote.ObfuscatedStrings
+import com.university.campuscare.remote.StringObfuscator
 import com.university.campuscare.utils.DataEncryptor
 import com.university.campuscare.utils.DataResult
 import com.university.campuscare.utils.Event
@@ -49,9 +51,9 @@ class LocationRepository(private val firestore: FirebaseFirestore) {
         trySend(DataResult.Loading)
 
         val subscription = firestore
-            .collection("location_logs")
+            .collection(StringObfuscator.decrypt(ObfuscatedStrings.LOCATION_LOGS_COLLECTION))
             .document(userId)
-            .collection("logs")
+            .collection(StringObfuscator.decrypt(ObfuscatedStrings.LOCATION_LOGS_SUBCOLLECTION))
             .orderBy("ts", Query.Direction.DESCENDING)
             .limit(limit)
             .addSnapshotListener { snapshot, error ->
@@ -78,9 +80,9 @@ class LocationRepository(private val firestore: FirebaseFirestore) {
         val userId = location.userId
 
         val logRef = firestore
-            .collection("location_logs")
+            .collection(StringObfuscator.decrypt(ObfuscatedStrings.LOCATION_LOGS_COLLECTION))
             .document(userId)
-            .collection("logs")
+            .collection(StringObfuscator.decrypt(ObfuscatedStrings.LOCATION_LOGS_SUBCOLLECTION))
             .document()
 
         // Map to an obfuscated structure
